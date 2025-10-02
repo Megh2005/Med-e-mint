@@ -38,7 +38,7 @@ const logger = {
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.5-flash",
 });
 
 let cachedClient: MongoClient | null = null;
@@ -109,23 +109,19 @@ Email: ${doctor.email}
 
 function generateAIPrompt(diseaseDescription: string, doctorsText: string): string {
     return `
-Task: Based on the disease/symptom description and available doctors, decide:
-1. Analyze the medical requirements and symptoms
-2. Select the best-suited doctor (name only)
-3. Provide a short justification for the selected doctor
-4. Rate the match quality from 1-10 (10 being perfect match)
+Task: Based on the disease/symptom description and available doctors, analyze the medical requirements and select the best-suited doctor.
 
-Rules:
-- Do NOT mention doctors not in the list.
-- Only suggest ONE doctor who is most suitable.
-- Consider specialization, experience, and rating.
-- If no doctor seems particularly suitable, rate the match as 5 or below.
-- Format the response as:
+You must return a JSON object with the following structure:
+{
+  "selectedDoctorName": "string", // The name of the single best-suited doctor from the list.
+  "reason": "string", // A short justification for why this doctor was selected.
+  "matchQuality": "number" // A rating from 1-10 indicating the quality of the match (1=low, 10=perfect).
+}
 
-Match Quality: <rating>/10
-
-Selected Doctor:
-<Doctor Name> - <Short reason for selection>
+Rules for selection:
+- Only suggest ONE doctor from the provided list.
+- Base your decision on the doctor's specialization, experience, and the patient's symptoms.
+- If no doctor is a strong match, you can select the most plausible option but assign a 'matchQuality' of 5 or less.
 
 Disease/Symptom Description:
 ${diseaseDescription}
@@ -150,48 +146,43 @@ async function findBestDoctor(diseaseDescription: string): Promise<MatchResult> 
         const result = await model.generateContent(prompt);
         const responseText = result.response.text().trim();
 
-        const matchLine = responseText.match(/Match Quality:\s*(\d+)/i);
-        const matchQuality = matchLine ? parseInt(matchLine[1]) : 5;
-        const matchAccuracy = matchQuality * 10;
+        // Clean the response to extract only the JSON part
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error("Invalid JSON response from AI.");
+        }
+
+        const aiResponse = JSON.parse(jsonMatch[0]);
+        const { selectedDoctorName, reason: aiReason, matchQuality } = aiResponse;
+
+        const matchAccuracy = (matchQuality || 0) * 10;
 
         let selectedDoctor: Doctor | null = null;
-        let reason = "Selected based on available expertise";
+        let reason = aiReason || "Selected based on available expertise";
 
-        if (matchQuality >= 6) {
+        if (matchQuality >= 6 && selectedDoctorName) {
             logger.processing("Good match found, retrieving doctor details...");
-            const lines = responseText.split("\n");
-            for (const line of lines) {
-                if (line.includes(" - ")) {
-                    const parts = line.split(" - ");
-                    if (parts.length >= 2) {
-                        const name = parts[0].replace("Selected Doctor:", "").trim();
-                        reason = parts[1].trim();
+            const client = await getMongoClient();
+            const db = client.db(dbName);
+            const collection = db.collection<Doctor>(collectionName);
+            const doctorDoc = await collection.findOne({
+                name: { $regex: new RegExp(selectedDoctorName, "i") },
+            });
 
-                        const client = await getMongoClient();
-                        const db = client.db(dbName);
-                        const collection = db.collection<Doctor>(collectionName);
-                        const doctorDoc = await collection.findOne({
-                            name: { $regex: new RegExp(name, "i") },
-                        });
-
-                        if (doctorDoc) {
-                            selectedDoctor = doctorDoc;
-                            break;
-                        }
-                    }
-                }
+            if (doctorDoc) {
+                selectedDoctor = doctorDoc;
             }
         }
 
-        if (!selectedDoctor || matchQuality < 6) {
-            logger.warning("No specific match found, selecting random doctor...");
+        if (!selectedDoctor) {
+            logger.warning("No specific match found or AI selection failed, selecting random doctor...");
             const randomDoctor = await getRandomDoctor();
             if (randomDoctor) {
                 selectedDoctor = randomDoctor;
                 reason =
                     matchQuality < 6
                         ? "No specific match found - showing available doctor"
-                        : reason;
+                        : "AI selection failed - showing available doctor";
             }
         }
 
@@ -199,7 +190,7 @@ async function findBestDoctor(diseaseDescription: string): Promise<MatchResult> 
             throw new Error("Unable to find any doctor");
         }
 
-        const matchType = matchQuality >= 6 ? "AI Selected" : "Random Selection";
+        const matchType = (matchQuality >= 6 && selectedDoctorName) ? "AI Selected" : "Random Selection";
         logger.success(`Match completed with ${matchAccuracy}% accuracy`);
 
         return {
@@ -221,7 +212,7 @@ async function findBestDoctor(diseaseDescription: string): Promise<MatchResult> 
                     : "No specific match found - showing available doctor",
         };
     } catch (error) {
-        logger.error("AI processing failed, falling back to random selection");
+        logger.error(`AI processing failed, falling back to random selection: ${error}`);
         const randomDoctor = await getRandomDoctor();
         if (randomDoctor) {
             return {
@@ -273,9 +264,9 @@ export async function POST(request: NextRequest) {
 
         if (searchCount >= searchLimit) {
             return NextResponse.json(
-                { 
+                {
                     error: "You have reached your maximum search limit.",
-                    limitReached: true 
+                    limitReached: true
                 },
                 { status: 429 }
             );

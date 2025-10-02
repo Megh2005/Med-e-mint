@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "@/components/logo";
@@ -19,7 +19,8 @@ import {
   User as UserIcon,
   LogOut,
   Gem,
-  Pickaxe
+  Pickaxe,
+  ClipboardPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -28,9 +29,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 const mainNavLinks = [
   { href: "/", label: "Home", icon: <Home /> },
@@ -49,17 +51,10 @@ const mainNavLinks = [
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -82,7 +77,13 @@ export default function Header() {
   const authLink = user
     ? { href: "/profile", label: "Profile", icon: <UserIcon /> }
     : { href: "/auth", label: "Sign In", icon: <LogIn /> };
-  const navLinks = [...mainNavLinks, authLink];
+
+  let allNavLinks = [...mainNavLinks];
+  if (user && user.role === 'doctor') {
+    allNavLinks.push({ href: "/write-prescription", label: "Write Prescription", icon: <ClipboardPlus /> });
+  }
+
+  const navLinks = [...allNavLinks, authLink];
 
   return (
     <>
@@ -159,7 +160,7 @@ export default function Header() {
           </Link>
           <TooltipProvider>
             <nav className="flex flex-col items-center gap-4">
-              {mainNavLinks.map((link) => (
+              {allNavLinks.map((link) => (
                 <Tooltip key={link.href}>
                   <TooltipTrigger asChild>
                     <Link
