@@ -8,6 +8,9 @@ import { WalletContext } from "@/context/Wallet";
 import WalletButton from "@/components/WalletButton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { uploadFileToIPFS, uploadJSONToIPFS } from "@/utils/pinata";
+import { ethers } from "ethers";
+import Marketplace from "@/app/marketplace.json";
 
 const MintPage = () => {
   const { isConnected, userAddress } = useContext(WalletContext);
@@ -17,6 +20,8 @@ const MintPage = () => {
     description: "",
     document: null as File | null,
   });
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [errors, setErrors] = useState({
     title: "",
@@ -47,11 +52,109 @@ const MintPage = () => {
     return !newErrors.title && !newErrors.description && !newErrors.document;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (validateForm()) {
-      console.log(formData);
+      if (!formData.document) {
+        toast({
+          title: "Document Missing",
+          description: "Please upload a document to mint.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        // 1. Upload document to IPFS
+        const fileData = new FormData();
+        fileData.set("file", formData.document);
+
+        toast({
+          title: "Uploading Document",
+          description: "Please wait while we upload your document to IPFS.",
+        });
+
+        const fileUploadResponse = await uploadFileToIPFS(fileData);
+        if (!fileUploadResponse.success) {
+          toast({
+            title: "Upload Failed",
+            description: "Failed to upload document to IPFS.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // 2. Upload JSON metadata to IPFS
+        const metadata = {
+          title: formData.title,
+          description: formData.description,
+          image: fileUploadResponse.pinataURL,
+        };
+
+        toast({
+          title: "Uploading Metadata",
+          description: "Please wait while we upload your metadata to IPFS.",
+        });
+
+        const jsonUploadResponse = await uploadJSONToIPFS(metadata);
+        if (!jsonUploadResponse.success) {
+          toast({
+            title: "Metadata Upload Failed",
+            description: "Failed to upload metadata to IPFS.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // 3. Mint NFT
+        if (window.ethereum) {
+          const provider = new ethers.BrowserProvider(window.ethereum as any);
+          const signer = await provider.getSigner();
+          const contract = new ethers.Contract(
+            Marketplace.address,
+            Marketplace.abi,
+            signer
+          );
+
+          toast({
+            title: "Minting NFT",
+            description: "Please approve the transaction in your wallet.",
+          });
+
+          const transaction = await contract.createMedicalDocument(
+            jsonUploadResponse.pinataURL,
+            userAddress
+          );
+
+          await transaction.wait();
+
+          toast({
+            title: "Success!",
+            description: "Your document has been minted as an NFT.",
+          });
+
+          // Reset form
+          setFormData({
+            title: "",
+            description: "",
+            document: null,
+          });
+        } else {
+          toast({
+            title: "MetaMask Not Found",
+            description: "Please install MetaMask to mint an NFT.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        toast({
+          title: "An Error Occurred",
+          description: "An error occurred while minting the document.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -124,7 +227,9 @@ const MintPage = () => {
                   className="mt-1 resize-none bg-background shadow-neumorphic-inset"
                 />
                 {errors.description && (
-                  <p className="mt-1 text-sm text-red-500">{errors.description}</p>
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.description}
+                  </p>
                 )}
               </div>
               <div>

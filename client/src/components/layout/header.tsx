@@ -19,6 +19,7 @@ import {
   User as UserIcon,
   LogOut,
   Gem,
+  Pickaxe
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -39,8 +40,9 @@ const mainNavLinks = [
     label: "Scan Prescription",
     icon: <ScanLine />,
   },
-  { href: "/diet-coach", label: "AI Diet Coach", icon: <Bot /> },
-  { href: "/mint", label: "AI Diet Coach", icon: <Gem /> },
+  { href: "/diet-coach", label: "Diet Coach", icon: <Bot /> },
+  { href: "/mint", label: "Mint Docs", icon: <Gem /> },
+  { href: "/mint/docs", label: "Minted Docs", icon: <Pickaxe /> },
   { href: "/about", label: "About Us", icon: <Info /> },
   { href: "/contact", label: "Contact Us", icon: <Contact /> },
 ];
