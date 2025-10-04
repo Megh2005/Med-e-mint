@@ -6,21 +6,39 @@ import Link from "next/link";
 const features = [
   {
     title: "Find a Doctor",
-    description: "Search for specialists and book appointments seamlessly.",
+    description: "Search for specialists and book appointments seamlessly to get the care you need, when you need it.",
     icon: <Stethoscope className="size-8 text-primary" />,
     link: "/doctor-finder",
   },
   {
     title: "Scan Prescription",
-    description: "Upload your prescription to get medication details in seconds.",
+    description: "Upload your prescription to get medication details in seconds, making it easier to manage your health.",
     icon: <ScanLine className="size-8 text-primary" />,
     link: "/prescription-scanner",
   },
   {
     title: "AI Diet Coach",
-    description: "Get a personalized diet plan based on your health profile.",
+    description: "Get a personalized diet plan based on your health profile, helping you achieve your wellness goals.",
     icon: <Bot className="size-8 text-primary" />,
     link: "/diet-coach",
+  },
+  {
+    title: "Mint Medical Records",
+    description: "Mint your medical records as NFTs for secure, decentralized, and immutable storage on the blockchain.",
+    icon: <Bot className="size-8 text-primary" />,
+    link: "/mint",
+  },
+  {
+    title: "Detailed Dashboard",
+    description: "Manage your health profile and medical history in one secure place, with complete control over your data.",
+    icon: <Stethoscope className="size-8 text-primary" />,
+    link: "/profile",
+  },
+  {
+    title: "Reliable Support",
+    description: "Get in touch with our support team for any queries or assistance. We are here to help you 24/7.",
+    icon: <ScanLine className="size-8 text-primary" />,
+    link: "/contact",
   },
 ];
 

@@ -21,6 +21,7 @@ import {
   Gem,
   Pickaxe,
   ClipboardPlus,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -45,7 +46,6 @@ const mainNavLinks = [
   { href: "/diet-coach", label: "Diet Coach", icon: <Bot /> },
   { href: "/mint", label: "Mint Docs", icon: <Gem /> },
   { href: "/mint/docs", label: "Minted Docs", icon: <Pickaxe /> },
-  { href: "/about", label: "About Us", icon: <Info /> },
   { href: "/contact", label: "Contact Us", icon: <Contact /> },
 ];
 
@@ -81,6 +81,8 @@ export default function Header() {
   let allNavLinks = [...mainNavLinks];
   if (user && user.role === 'doctor') {
     allNavLinks.push({ href: "/write-prescription", label: "Write Prescription", icon: <ClipboardPlus /> });
+  } else if (user && user.role === 'patient') {
+    allNavLinks.push({ href: "/show-prescriptions", label: "Show Prescriptions", icon: <ClipboardList /> });
   }
 
   const navLinks = [...allNavLinks, authLink];

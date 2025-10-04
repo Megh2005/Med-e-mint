@@ -21,23 +21,12 @@ import Marketplace from "@/app/marketplace.json";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useContext } from "react";
+import { InfoRow } from "@/components/ui/InfoRow";
 import WalletButton from "@/components/WalletButton";
 
-import { prescriptionsCollection } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
 
-interface Prescription {
-  id: string;
-  doctorId: string;
-  patientId: string;
-  doctorName: string;
-  patientName: string;
-  diseaseDetails: string;
-  labTests: string;
-  medications: string;
-  additionalNotes: string;
-  dateTime: string;
-}
+
+
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -54,7 +43,7 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({ title: "", description: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({ title: "", description: "" });
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -64,17 +53,7 @@ export default function ProfilePage() {
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           setUserData(userDoc.data());
-          const userRole = userDoc.data().role;
-          const q = query(
-            prescriptionsCollection,
-            where(userRole === "doctor" ? "doctorId" : "patientId", "==", currentUser.uid)
-          );
-          const querySnapshot = await getDocs(q);
-          const fetchedPrescriptions = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as Prescription[];
-          setPrescriptions(fetchedPrescriptions);
+          
         }
         setLoading(false);
       } else if (!isSigningOut) {
@@ -157,15 +136,7 @@ export default function ProfilePage() {
     }
   };
 
-  const InfoRow = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
-    <div className="flex items-center gap-4 p-3 rounded-lg shadow-neumorphic-inset">
-      <div className="text-primary">{icon}</div>
-      <div className="flex-1">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="font-medium">{value || 'N/A'}</p>
-      </div>
-    </div>
-  );
+  
 
   if (loading) {
     return (
@@ -251,61 +222,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div className="mt-6">
-            <h3 className="text-xl font-headline mb-4">My Prescriptions</h3>
-            {prescriptions.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {prescriptions.map((prescription) => (
-                  <Dialog key={prescription.id}>
-                    <DialogTrigger asChild>
-                      <div className="rounded-lg overflow-hidden shadow-neumorphic cursor-pointer relative p-4">
-                        <p className="font-bold">{userData?.role === "doctor" ? prescription.patientName : `Dr. ${prescription.doctorName}`}</p>
-                        <p className="text-sm text-muted-foreground">{prescription.dateTime}</p>
-                      </div>
-                    </DialogTrigger>
-                    <DialogContent className="p-6 max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>Prescription Details</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <InfoRow icon={<User size={20} />} label="Patient" value={prescription.patientName} />
-                        <InfoRow icon={<Briefcase size={20} />} label="Doctor" value={prescription.doctorName} />
-                        <InfoRow icon={<Mail size={20} />} label="Date & Time" value={prescription.dateTime} />
-                        <div>
-                          <h4 className="font-headline">Disease Details</h4>
-                          <p>{prescription.diseaseDetails}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-headline">Lab Tests</h4>
-                          <p>{prescription.labTests || "N/A"}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-headline">Medications</h4>
-                          <p>{prescription.medications}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-headline">Additional Notes</h4>
-                          <p>{prescription.additionalNotes || "N/A"}</p>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">No prescriptions found.</p>
-            )}
-          </div>
 
-          <div className="mt-6">
-            <h3 className="text-xl font-headline mb-4">My Documents</h3>
-            <Link href="/mint/docs">
-              <Button className="w-full shadow-neumorphic active:shadow-neumorphic-inset">
-                View My Minted Documents
-              </Button>
-            </Link>
-          </div>
-          
           <Button onClick={handleSignOut} className="w-full shadow-neumorphic active:shadow-neumorphic-inset">
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
