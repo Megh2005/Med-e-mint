@@ -5,16 +5,39 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { InfoRow } from "@/components/ui/InfoRow";
 import { prescriptionsCollection } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { User, Briefcase, Mail, Stethoscope, FlaskConical, Pill, FileText, Download } from 'lucide-react';
+import {
+  User,
+  Briefcase,
+  Mail,
+  Stethoscope,
+  FlaskConical,
+  Pill,
+  FileText,
+  Download,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toPng } from 'html-to-image';
+import { toPng } from "html-to-image";
 
 interface Prescription {
   id: string;
@@ -42,12 +65,32 @@ export default function ShowPrescriptionsPage() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
+
+        const cachedUserData = sessionStorage.getItem(
+          `user_data_${currentUser.uid}`
+        );
+        const cachedPrescriptions = sessionStorage.getItem(
+          `prescriptions_${currentUser.uid}`
+        );
+
+        if (cachedUserData && cachedPrescriptions) {
+          setUserData(JSON.parse(cachedUserData));
+          setPrescriptions(JSON.parse(cachedPrescriptions));
+          setLoading(false);
+          return;
+        }
+
         const userDocRef = doc(db, "users", currentUser.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setUserData(userData);
-          if (userData.role === 'patient') {
+          sessionStorage.setItem(
+            `user_data_${currentUser.uid}`,
+            JSON.stringify(userData)
+          );
+
+          if (userData.role === "patient") {
             const q = query(
               prescriptionsCollection,
               where("patientId", "==", currentUser.uid)
@@ -73,17 +116,18 @@ export default function ShowPrescriptionsPage() {
     if (prescriptionRef.current) {
       toPng(prescriptionRef.current)
         .then((dataUrl) => {
-          const patientName = prescription.patientName.replace(/\s+/g, '_');
+          const patientName = prescription.patientName.replace(/\s+/g, "_");
+
           const randomId = prescription.id.slice(0, 8);
           const fileName = `prescription_${patientName}_${randomId}.png`;
 
-          const link = document.createElement('a');
+          const link = document.createElement("a");
           link.download = fileName;
           link.href = dataUrl;
           link.click();
         })
         .catch((err) => {
-          console.error('oops, something went wrong!', err);
+          console.error("oops, something went wrong!", err);
           toast({
             title: "Error",
             description: "Could not export prescription as PNG.",
@@ -102,7 +146,10 @@ export default function ShowPrescriptionsPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="rounded-lg overflow-hidden shadow-neumorphic cursor-pointer relative p-4">
+              <div
+                key={i}
+                className="rounded-lg overflow-hidden shadow-neumorphic cursor-pointer relative p-4"
+              >
                 <Skeleton className="h-5 w-32 mb-2" />
                 <Skeleton className="h-4 w-24" />
               </div>
@@ -117,8 +164,12 @@ export default function ShowPrescriptionsPage() {
     <div className="container mx-auto min-h-[calc(100vh-10rem)] p-4">
       <Card className="w-full bg-background shadow-neumorphic-lg">
         <CardHeader>
-          <CardTitle className="text-3xl font-headline">My Prescriptions</CardTitle>
-          <CardDescription>Here are all the prescriptions you have received.</CardDescription>
+          <CardTitle className="text-3xl font-headline">
+            My Prescriptions
+          </CardTitle>
+          <CardDescription>
+            Here are all the prescriptions you have received.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {prescriptions.length > 0 ? (
@@ -128,29 +179,49 @@ export default function ShowPrescriptionsPage() {
                   <DialogTrigger asChild>
                     <div className="rounded-lg overflow-hidden shadow-neumorphic cursor-pointer relative p-4">
                       <p className="font-bold">{`Dr. ${prescription.doctorName}`}</p>
-                      <p className="text-sm text-muted-foreground">{prescription.dateTime}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {prescription.dateTime}
+                      </p>
                     </div>
                   </DialogTrigger>
                   <DialogContent className="p-0 max-w-3xl h-[80vh] flex flex-col">
                     <div className="overflow-y-auto flex-grow">
                       <div ref={prescriptionRef} className="bg-background p-8">
                         <DialogHeader>
-                          <DialogTitle className="text-center text-4xl font-bold mb-4">Prescription</DialogTitle>
+                          <DialogTitle className="text-center text-4xl font-bold mb-4">
+                            Prescription
+                          </DialogTitle>
                         </DialogHeader>
                         <div className="space-y-6">
                           <Card className="shadow-neumorphic-sm">
                             <CardHeader>
-                              <CardTitle className="flex items-center gap-2"><User size={20} /> Patient Details</CardTitle>
+                              <CardTitle className="flex items-center gap-2">
+                                <User size={20} /> Patient Details
+                              </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                              <InfoRow icon={<User size={16} />} label="Patient" value={prescription.patientName} />
-                              <InfoRow icon={<Briefcase size={16} />} label="Doctor" value={prescription.doctorName} />
-                              <InfoRow icon={<Mail size={16} />} label="Date & Time" value={prescription.dateTime} />
+                              <InfoRow
+                                icon={<User size={16} />}
+                                label="Patient"
+                                value={prescription.patientName}
+                              />
+                              <InfoRow
+                                icon={<Briefcase size={16} />}
+                                label="Doctor"
+                                value={prescription.doctorName}
+                              />
+                              <InfoRow
+                                icon={<Mail size={16} />}
+                                label="Date & Time"
+                                value={prescription.dateTime}
+                              />
                             </CardContent>
                           </Card>
                           <Card className="shadow-neumorphic-sm">
                             <CardHeader>
-                              <CardTitle className="flex items-center gap-2"><Stethoscope size={20} /> Disease Details</CardTitle>
+                              <CardTitle className="flex items-center gap-2">
+                                <Stethoscope size={20} /> Disease Details
+                              </CardTitle>
                             </CardHeader>
                             <CardContent>
                               <p>{prescription.diseaseDetails}</p>
@@ -158,7 +229,9 @@ export default function ShowPrescriptionsPage() {
                           </Card>
                           <Card className="shadow-neumorphic-sm">
                             <CardHeader>
-                              <CardTitle className="flex items-center gap-2"><FlaskConical size={20} /> Lab Tests</CardTitle>
+                              <CardTitle className="flex items-center gap-2">
+                                <FlaskConical size={20} /> Lab Tests
+                              </CardTitle>
                             </CardHeader>
                             <CardContent>
                               <p>{prescription.labTests || "N/A"}</p>
@@ -166,7 +239,9 @@ export default function ShowPrescriptionsPage() {
                           </Card>
                           <Card className="shadow-neumorphic-sm">
                             <CardHeader>
-                              <CardTitle className="flex items-center gap-2"><Pill size={20} /> Medications</CardTitle>
+                              <CardTitle className="flex items-center gap-2">
+                                <Pill size={20} /> Medications
+                              </CardTitle>
                             </CardHeader>
                             <CardContent>
                               <p>{prescription.medications}</p>
@@ -174,7 +249,9 @@ export default function ShowPrescriptionsPage() {
                           </Card>
                           <Card className="shadow-neumorphic-sm">
                             <CardHeader>
-                              <CardTitle className="flex items-center gap-2"><FileText size={20} /> Additional Notes</CardTitle>
+                              <CardTitle className="flex items-center gap-2">
+                                <FileText size={20} /> Additional Notes
+                              </CardTitle>
                             </CardHeader>
                             <CardContent>
                               <p>{prescription.additionalNotes || "N/A"}</p>
@@ -184,7 +261,10 @@ export default function ShowPrescriptionsPage() {
                       </div>
                     </div>
                     <DialogFooter className="p-6 pt-0">
-                      <Button onClick={() => handleExport(prescription)} className="flex items-center gap-2">
+                      <Button
+                        onClick={() => handleExport(prescription)}
+                        className="flex items-center gap-2"
+                      >
                         <Download size={16} />
                         Export as PNG
                       </Button>
@@ -201,4 +281,3 @@ export default function ShowPrescriptionsPage() {
     </div>
   );
 }
-
