@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toPng } from "html-to-image";
+import MDEditor from '@uiw/react-md-editor';
 
 interface Prescription {
   id: string;
@@ -244,7 +245,13 @@ export default function ShowPrescriptionsPage() {
                               </CardTitle>
                             </CardHeader>
                             <CardContent>
-                              <p>{prescription.medications}</p>
+                              <div data-color-mode="light">
+                                {prescription.medications ? (
+                                  <MDEditor.Markdown source={prescription.medications} />
+                                ) : (
+                                  <p>N/A</p>
+                                )}
+                              </div>
                             </CardContent>
                           </Card>
                           <Card className="shadow-neumorphic-sm">

@@ -9,6 +9,7 @@ import { useAuth, UserProfile } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { db, prescriptionsCollection } from "@/lib/firebase";
+import MDEditor from '@uiw/react-md-editor';
 
 export default function PrescriptionForm() {
   const { user } = useAuth();
@@ -219,18 +220,14 @@ export default function PrescriptionForm() {
             >
               Medications <span className="text-destructive">*</span>
             </label>
-            <Textarea
-              id="medications"
-              rows={6}
-              value={medications}
-              onChange={(e) => setMedications(e.target.value)}
-              placeholder="e.g., 
-1. Paracetamol 500mg - Take 1 tablet twice daily after meals for 3 days
-2. Amoxicillin 500mg - Take 1 capsule three times daily for 5 days
-3. Cough Syrup - Take 10ml three times daily..."
-              className="w-full resize-none text-base bg-background shadow-neumorphic-inset transition-shadow"
-              disabled={isLoading}
-            />
+            <div data-color-mode="light">
+              <MDEditor
+                value={medications}
+                onChange={(value) => setMedications(value || "")}
+                preview="edit"
+                height={200}
+              />
+            </div>
           </div>
 
           {/* Additional Notes */}
