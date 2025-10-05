@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -35,10 +35,18 @@ import {
   Pill,
   FileText,
   Download,
+  Gem,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toPng } from "html-to-image";
 import MDEditor from '@uiw/react-md-editor';
+import { WalletContext } from "@/context/Wallet";
+import { uploadFileToIPFS, uploadJSONToIPFS } from "@/utils/pinata";
+import { ethers } from "ethers";
+import Marketplace from "@/app/marketplace.json";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import WalletButton from "@/components/WalletButton";
 
 interface Prescription {
   id: string;
@@ -61,6 +69,12 @@ export default function ShowPrescriptionsPage() {
   const [loading, setLoading] = useState(true);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const prescriptionRef = useRef<HTMLDivElement>(null);
+  const { userAddress, isConnected } = useContext(WalletContext);
+
+  const [mintingDialogOpen, setMintingDialogOpen] = useState(false);
+  const [connectWalletDialogOpen, setConnectWalletDialogOpen] = useState(false);
+  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -135,6 +149,60 @@ export default function ShowPrescriptionsPage() {
             variant: "destructive",
           });
         });
+    }
+  };
+
+  const handleMintClick = (prescription: Prescription) => {
+    if (isConnected) {
+      setSelectedPrescription(prescription);
+      setMintingDialogOpen(true);
+    } else {
+      setConnectWalletDialogOpen(true);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedPrescription && prescriptionRef.current) {
+      setIsLoading(true);
+      try {
+        const dataUrl = await toPng(prescriptionRef.current);
+        const blob = await (await fetch(dataUrl)).blob();
+        
+        const randomId = Math.random().toString(36).substring(2, 10);
+        const title = `Dr_${selectedPrescription.doctorName.replace(/\s+/g, "_")}_${randomId}_${selectedPrescription.patientName.replace(/\s+/g, "_")}`;
+        const file = new File([blob], `${title}.png`, { type: 'image/png' });
+
+        const fileData = new FormData();
+        fileData.set("file", file);
+
+        toast({ title: "Uploading Document", description: "Please wait..." });
+        const fileUploadResponse = await uploadFileToIPFS(fileData);
+        if (!fileUploadResponse.success) throw new Error("Failed to upload document to IPFS.");
+
+        const metadata = { title: title, description: selectedPrescription.diseaseDetails, image: fileUploadResponse.pinataURL };
+        toast({ title: "Uploading Metadata", description: "Please wait..." });
+        const jsonUploadResponse = await uploadJSONToIPFS(metadata);
+        if (!jsonUploadResponse.success) throw new Error("Failed to upload metadata to IPFS.");
+
+        if (window.ethereum) {
+          const provider = new ethers.BrowserProvider(window.ethereum as any);
+          const signer = await provider.getSigner();
+          const contract = new ethers.Contract(Marketplace.address, Marketplace.abi, signer);
+
+          toast({ title: "Minting NFT", description: "Please approve the transaction in your wallet." });
+          const transaction = await contract.createMedicalDocument(jsonUploadResponse.pinataURL, userAddress);
+          await transaction.wait();
+
+          toast({ title: "Success!", description: "Your document has been minted as an NFT." });
+          setMintingDialogOpen(false);
+        } else {
+          throw new Error("MetaMask Not Found. Please install MetaMask.");
+        }
+      } catch (error: any) {
+        toast({ title: "An Error Occurred", description: error.message, variant: "destructive" });
+      }
+      setIsLoading(false);
     }
   };
 
@@ -275,6 +343,13 @@ export default function ShowPrescriptionsPage() {
                         <Download size={16} />
                         Export as PNG
                       </Button>
+                      <Button
+                        onClick={() => handleMintClick(prescription)}
+                        className="flex items-center gap-2"
+                      >
+                        <Gem size={16} />
+                        Mint
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -285,6 +360,34 @@ export default function ShowPrescriptionsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={mintingDialogOpen} onOpenChange={setMintingDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mint Prescription</DialogTitle>
+            <DialogDescription>Your prescription is ready to be minted as an NFT.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <DialogFooter>
+              <Button type="submit" disabled={isLoading} className="w-full shadow-neumorphic active:shadow-neumorphic-inset">
+                {isLoading ? "Minting..." : "Mint Prescription"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={connectWalletDialogOpen} onOpenChange={setConnectWalletDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Connect Wallet</DialogTitle>
+            <DialogDescription>Please connect your wallet to mint a new document.</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center py-4">
+            <WalletButton />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
