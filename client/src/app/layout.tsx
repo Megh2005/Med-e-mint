@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
 
 const ptSerif = PT_Serif({
   subsets: ["latin"],
@@ -24,15 +25,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-      </head>
+      <head></head>
       <body className={cn("font-body antialiased", ptSerif.variable)}>
         <div className="flex min-h-screen flex-col">
+          <ScrollProgress />
           <Header />
           <main className="flex-1 md:ml-16">{children}</main>
           <Footer />
         </div>
         <Toaster />
+
+        
       </body>
     </html>
   );

@@ -8,16 +8,16 @@ declare global {
     }
 }
 
-const AVALANCHE_FUJI_TESTNET_PARAMS = {
-    chainId: "0xA869",
-    chainName: "Avalanche Fuji Testnet",
+const FLOW_TESTNET_PARAMS = {
+    chainId: "0x221",
+    chainName: "Flow Testnet",
     nativeCurrency: {
-        name: "Avalanche",
-        symbol: "AVAX",
+        name: "Flow",
+        symbol: "FLOW",
         decimals: 18,
     },
-    rpcUrls: ["https://api.avax-test.network/ext/bc/C/rpc"],
-    blockExplorerUrls: ["https://testnet.snowtrace.io/"],
+    rpcUrls: ["https://testnet.evm.nodes.onflow.org"],
+    blockExplorerUrls: ["https://evm-testnet.flowscan.io/"],
 };
 
 export const connectWallet = async (
@@ -45,33 +45,33 @@ export const connectWallet = async (
         setIsConnected(true);
 
         const { chainId } = await provider.getNetwork();
-        const avalancheFujiTestnetId = 43113;
+        const flowTestnetId = 545;
 
-        if (parseInt(chainId.toString(), 10) !== avalancheFujiTestnetId) {
+        if (parseInt(chainId.toString(), 10) !== flowTestnetId) {
             try {
                 await window.ethereum.request({
                     method: "wallet_switchEthereumChain",
-                    params: [{ chainId: AVALANCHE_FUJI_TESTNET_PARAMS.chainId }],
+                    params: [{ chainId: FLOW_TESTNET_PARAMS.chainId }],
                 });
                 toast({
                     title: "Network Switched",
-                    description: "Successfully switched to Avalanche Fuji Testnet.",
+                    description: "Successfully switched to Flow Testnet.",
                 });
             } catch (switchError: any) {
                 if (switchError.code === 4902) {
                     try {
                         await window.ethereum.request({
                             method: "wallet_addEthereumChain",
-                            params: [AVALANCHE_FUJI_TESTNET_PARAMS],
+                            params: [FLOW_TESTNET_PARAMS],
                         });
                         toast({
                             title: "Network Added",
-                            description: "Avalanche Fuji Testnet has been added and connected.",
+                            description: "Flow Testnet has been added and connected.",
                         });
                     } catch (addError) {
                         toast({
                             title: "Failed to Add Network",
-                            description: "Could not add Avalanche Fuji Testnet. Please try adding it manually.",
+                            description: "Could not add Flow Testnet. Please try adding it manually.",
                             variant: "destructive",
                         });
                         console.error("Add network error:", addError);
@@ -79,7 +79,7 @@ export const connectWallet = async (
                 } else {
                     toast({
                         title: "Failed to Switch Network",
-                        description: "Could not switch to Avalanche Fuji Testnet. Please try switching manually.",
+                        description: "Could not switch to Flow Testnet. Please try switching manually.",
                         variant: "destructive",
                     });
                     console.error("Switch error:", switchError);

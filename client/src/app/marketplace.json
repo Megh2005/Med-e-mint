@@ -1,7 +1,7 @@
 {
   "_format": "hh-sol-artifact-1",
   "contractName": "MedicalDocumentNFT",
-  "sourceName": "contracts/contract.sol.sol",
+  "sourceName": "contracts/contract.sol",
   "abi": [
     {
       "inputs": [],

@@ -1,5 +1,10 @@
 # **App Name**: Med-e-Mint
 
+## **Contract Address**: 
+```
+0x0Dffe94Fa212cCc164C14c9cb244E0B259343DeE
+```
+
 ## Core Features:
 
 - Doctor Finder: Allows users to input symptoms or diseases to find suitable doctors using a clean and intuitive search interface.
