@@ -235,6 +235,7 @@ export default function AuthPage() {
                           <SelectContent>
                             <SelectItem value="doctor">Doctor</SelectItem>
                             <SelectItem value="patient">Patient</SelectItem>
+                            <SelectItem value="ngo">NGO</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
