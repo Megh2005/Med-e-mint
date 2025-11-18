@@ -5,14 +5,33 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Bot, Loader2, Sparkles, Download } from "lucide-react";
-import * as htmlToImage from 'html-to-image';
-
+import * as htmlToImage from "html-to-image";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { handleGetDietPlan } from "@/lib/actions";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,7 +40,6 @@ import { DietPlanOutput } from "@/ai/flows/get-personalized-diet-plan";
 import { doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Separator } from "@/components/ui/separator";
-
 
 import { getUserDietInfo } from "@/lib/actions";
 import { useAuth } from "@/hooks/use-auth";
@@ -58,7 +76,7 @@ export default function DietForm() {
   const form = useForm<DietFormValues>({
     resolver: zodResolver(dietFormSchema),
     defaultValues: {
-      date: new Date().toLocaleDateString('en-CA'),
+      date: new Date().toLocaleDateString("en-CA"),
       name: "",
       email: "",
       gender: "",
@@ -87,12 +105,12 @@ export default function DietForm() {
           form.reset({
             ...form.getValues(),
             ...userData,
-            email: user.email || '',
-            date: new Date().toLocaleDateString('en-CA'),
+            email: user.email || "",
+            date: new Date().toLocaleDateString("en-CA"),
           });
         } else {
-            form.setValue('email', user.email || '');
-            form.setValue('date', new Date().toLocaleDateString('en-CA'));
+          form.setValue("email", user.email || "");
+          form.setValue("date", new Date().toLocaleDateString("en-CA"));
         }
       };
       fetchUserData();
@@ -110,16 +128,19 @@ export default function DietForm() {
     }
     setResult(null);
     startTransition(async () => {
-      const response = await handleGetDietPlan({...values, specialConditions: values.specialConditions || ""}, user?.uid);
+      const response = await handleGetDietPlan(
+        { ...values, specialConditions: values.specialConditions || "" },
+        user?.uid
+      );
       if (response.success && response.data) {
         setResult(response.data);
         if (user) {
-            const userDocRef = doc(db, "users", user.uid);
-            const newCount = (searchCount || 0) + 1;
-            await updateDoc(userDocRef, {
-                dietPlanSearchCount: newCount
-            });
-            setSearchCount(newCount);
+          const userDocRef = doc(db, "users", user.uid);
+          const newCount = (searchCount || 0) + 1;
+          await updateDoc(userDocRef, {
+            dietPlanSearchCount: newCount,
+          });
+          setSearchCount(newCount);
         }
       } else {
         toast({
@@ -135,7 +156,8 @@ export default function DietForm() {
     if (!dietPlanRef.current || !user) {
       toast({
         title: "Error",
-        description: "Cannot export diet plan. User not logged in or plan not generated.",
+        description:
+          "Cannot export diet plan. User not logged in or plan not generated.",
         variant: "destructive",
       });
       return;
@@ -144,24 +166,26 @@ export default function DietForm() {
     setIsExporting(true);
 
     try {
-      const blob = await htmlToImage.toBlob(dietPlanRef.current, { cacheBust: true });
+      const blob = await htmlToImage.toBlob(dietPlanRef.current, {
+        cacheBust: true,
+      });
 
       if (!blob) {
         throw new Error("Failed to create image blob.");
       }
 
       const formData = new FormData();
-      formData.append('file', blob, 'diet-plan.png');
-      formData.append('folder', 'diet-plans');
+      formData.append("file", blob, "diet-plan.png");
+      formData.append("folder", "diet-plans");
 
-      const uploadResponse = await fetch('/api/upload', {
-        method: 'POST',
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
         body: formData,
       });
 
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json();
-        throw new Error(errorData.error || 'Failed to upload image.');
+        throw new Error(errorData.error || "Failed to upload image.");
       }
 
       const uploadResult = await uploadResponse.json();
@@ -169,16 +193,16 @@ export default function DietForm() {
 
       const userDocRef = doc(db, "users", user.uid);
       await updateDoc(userDocRef, {
-        dietPlanUrl: arrayUnion({ 
+        dietPlanUrl: arrayUnion({
           url: imageUrl,
           date: new Date().toISOString(),
         }),
       });
 
       // Trigger local download
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = 'diet-plan.png';
+      link.download = "diet-plan.png";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -186,12 +210,13 @@ export default function DietForm() {
 
       toast({
         title: "Export Successful",
-        description: "Your diet plan has been saved to your profile and downloaded.",
+        description:
+          "Your diet plan has been saved to your profile and downloaded.",
       });
-
     } catch (err) {
       console.error("Export failed:", err);
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred.";
       toast({
         variant: "destructive",
         title: "Export failed",
@@ -211,85 +236,108 @@ export default function DietForm() {
             Your Personalized Diet Coach
           </CardTitle>
           <CardDescription>
-            Fill in your details below to receive a custom diet plan generated by our AI.
+            Fill in your details below to receive a custom diet plan generated
+            by our AI.
           </CardDescription>
           <p className="text-sm text-muted-foreground pt-2">
-            Generations remaining: {Math.max(0, SEARCH_LIMIT - searchCount)}/{SEARCH_LIMIT}
+            Generations remaining: {Math.max(0, SEARCH_LIMIT - searchCount)}/
+            {SEARCH_LIMIT}
           </p>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="date"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Date</FormLabel>
-                            <FormControl>
-                                <Input {...field} className="bg-background shadow-neumorphic-inset" readOnly />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                                <Input {...field} className="bg-background shadow-neumorphic-inset" readOnly />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                     <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                                <Input {...field} className="bg-background shadow-neumorphic-inset" readOnly />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="age"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Age</FormLabel>
-                            <FormControl>
-                                <Input type="number" {...field} className="bg-background shadow-neumorphic-inset" readOnly />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="gender"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Gender</FormLabel>
-                            <FormControl>
-                                <Input {...field} className="bg-background shadow-neumorphic-inset" readOnly />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-                <Separator />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          className="bg-background shadow-neumorphic-inset"
+                          readOnly
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          className="bg-background shadow-neumorphic-inset"
+                          readOnly
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          className="bg-background shadow-neumorphic-inset"
+                          readOnly
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Age</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          className="bg-background shadow-neumorphic-inset"
+                          readOnly
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Gender</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          className="bg-background shadow-neumorphic-inset"
+                          readOnly
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <Separator />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -298,7 +346,12 @@ export default function DietForm() {
                     <FormItem>
                       <FormLabel>Height (cm)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 175" {...field} className="bg-background shadow-neumorphic-inset" />
+                        <Input
+                          type="number"
+                          placeholder="e.g., 175"
+                          {...field}
+                          className="bg-background shadow-neumorphic-inset"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -311,7 +364,12 @@ export default function DietForm() {
                     <FormItem>
                       <FormLabel>Weight (kg)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 70" {...field} className="bg-background shadow-neumorphic-inset" />
+                        <Input
+                          type="number"
+                          placeholder="e.g., 70"
+                          {...field}
+                          className="bg-background shadow-neumorphic-inset"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -325,18 +383,33 @@ export default function DietForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Lifestyle</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger className="bg-background shadow-neumorphic-inset">
                             <SelectValue placeholder="Select your activity level" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="sedentary">Sedentary (little to no exercise)</SelectItem>
-                          <SelectItem value="lightly_active">Lightly Active (light exercise/sports 1-3 days/week)</SelectItem>
-                          <SelectItem value="moderately_active">Moderately Active (moderate exercise/sports 3-5 days/week)</SelectItem>
-                          <SelectItem value="very_active">Very Active (hard exercise/sports 6-7 days a week)</SelectItem>
-                          <SelectItem value="extra_active">Extra Active (very hard exercise/sports & physical job)</SelectItem>
+                          <SelectItem value="sedentary">
+                            Sedentary (little to no exercise)
+                          </SelectItem>
+                          <SelectItem value="lightly_active">
+                            Lightly Active (light exercise/sports 1-3 days/week)
+                          </SelectItem>
+                          <SelectItem value="moderately_active">
+                            Moderately Active (moderate exercise/sports 3-5
+                            days/week)
+                          </SelectItem>
+                          <SelectItem value="very_active">
+                            Very Active (hard exercise/sports 6-7 days a week)
+                          </SelectItem>
+                          <SelectItem value="extra_active">
+                            Extra Active (very hard exercise/sports & physical
+                            job)
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -349,7 +422,10 @@ export default function DietForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Food Preference</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger className="bg-background shadow-neumorphic-inset">
                             <SelectValue placeholder="Select your diet type" />
@@ -357,7 +433,9 @@ export default function DietForm() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                          <SelectItem value="non-vegetarian">Non-Vegetarian</SelectItem>
+                          <SelectItem value="non-vegetarian">
+                            Non-Vegetarian
+                          </SelectItem>
                           <SelectItem value="vegan">Vegan</SelectItem>
                           <SelectItem value="jain">Jain</SelectItem>
                           <SelectItem value="eggetarian">Eggetarian</SelectItem>
@@ -375,102 +453,115 @@ export default function DietForm() {
                   <FormItem>
                     <FormLabel>Cuisine Preferences</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Italian, Mexican, Indian" {...field} className="bg-background shadow-neumorphic-inset" />
+                      <Input
+                        placeholder="e.g., Italian, Mexican, Indian"
+                        {...field}
+                        className="bg-background shadow-neumorphic-inset"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-               <div>
+              <div>
                 <FormLabel>Medical Conditions</FormLabel>
                 <FormDescription className="text-xs mb-2">
                   Select any existing conditions.
                 </FormDescription>
                 <div className="flex flex-wrap gap-4">
-                <FormField
-                  control={form.control}
-                  name="hasDiabetes"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-neumorphic-inset">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Diabetes (Sugar)
-                        </FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="hasBloodPressure"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-neumorphic-inset">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          High Blood Pressure
-                        </FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="hasThyroid"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-neumorphic-inset">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Thyroid
-                        </FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="hasDiabetes"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-neumorphic-inset">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Diabetes (Sugar)</FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="hasBloodPressure"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-neumorphic-inset">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>High Blood Pressure</FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="hasThyroid"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-neumorphic-inset">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Thyroid</FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
 
-               <FormField
+              <FormField
                 control={form.control}
                 name="specialConditions"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Other Conditions or Preferences</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., Allergies, specific dietary needs..." {...field} className="bg-background shadow-neumorphic-inset" />
+                      <Textarea
+                        placeholder="e.g., Allergies, specific dietary needs..."
+                        {...field}
+                        className="bg-background shadow-neumorphic-inset"
+                      />
                     </FormControl>
-                     <FormDescription>
-                        Please list any other diseases, allergies, or special conditions, separated by commas.
+                    <FormDescription>
+                      Please list any other diseases, allergies, or special
+                      conditions, separated by commas.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isPending || searchCount >= SEARCH_LIMIT} className="w-full shadow-neumorphic active:shadow-neumorphic-inset transition-shadow duration-200">
-                {isPending ? <Loader2 className="animate-spin" /> : (searchCount >= SEARCH_LIMIT ? "Generation Limit Reached" : "Generate My Plan")}
+              <Button
+                type="submit"
+                disabled={isPending || searchCount >= SEARCH_LIMIT}
+                className="w-full shadow-neumorphic active:shadow-neumorphic-inset transition-shadow duration-200"
+              >
+                {isPending ? (
+                  <Loader2 className="animate-spin" />
+                ) : searchCount >= SEARCH_LIMIT ? (
+                  "Generation Limit Reached"
+                ) : (
+                  "Generate My Plan"
+                )}
               </Button>
             </form>
           </Form>
         </CardContent>
       </Card>
-      
+
       <div className="flex items-center justify-center">
         <Card className="w-full bg-background shadow-neumorphic">
           <CardHeader className="flex flex-row items-center justify-between">
@@ -480,43 +571,70 @@ export default function DietForm() {
                 Your AI-Generated Diet Plan
               </CardTitle>
             </div>
-                        {result && (
-                            <Button onClick={handleExport} disabled={isExporting} size="sm" className="shadow-neumorphic active:shadow-neumorphic-inset transition-shadow duration-200">
-                                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                                {isExporting ? 'Exporting...' : 'Export'}
-                            </Button>
-                        )}
+            {result && (
+              <Button
+                onClick={handleExport}
+                disabled={isExporting}
+                size="sm"
+                className="shadow-neumorphic active:shadow-neumorphic-inset transition-shadow duration-200"
+              >
+                {isExporting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" />
+                )}
+                {isExporting ? "Exporting..." : "Export"}
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="min-h-[400px]">
             {isPending && (
               <div className="flex flex-col items-center justify-center h-full space-y-4">
                 <Loader2 className="size-12 animate-spin text-primary" />
-                <p className="text-muted-foreground">Our AI is preparing your personalized plan...</p>
+                <p className="text-muted-foreground">
+                  Our AI is preparing your personalized plan...
+                </p>
               </div>
             )}
             {result && (
-               <div ref={dietPlanRef} className="bg-background p-6 rounded-md">
+              <div ref={dietPlanRef} className="bg-background p-6 rounded-md">
                 <div className="mb-4">
-                    <h3 className="text-lg font-semibold">Diet Plan for {form.getValues("name")}</h3>
-                    <p className="text-sm text-muted-foreground">Email: {form.getValues("email")}</p>
-                    <p className="text-sm text-muted-foreground">Gender: {form.getValues("gender")}</p>
-                    <p className="text-sm text-muted-foreground">Date: {form.getValues("date")}</p>
+                  <h3 className="text-lg font-semibold">
+                    Diet Plan for {form.getValues("name")}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Email: {form.getValues("email")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Gender: {form.getValues("gender")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Date: {form.getValues("date")}
+                  </p>
                 </div>
-                 <div className="space-y-4">
-                    {result.meals.map((meal, mealIndex) => (
-                        <div key={mealIndex} className="p-4 rounded-lg bg-background shadow-neumorphic-inset">
-                            <h4 className="font-semibold">{meal.meal_time} ({meal.calories} kcal)</h4>
-                            <p className="text-muted-foreground text-sm">{meal.food_items}</p>
-                        </div>
-                    ))}
+                <div className="space-y-4">
+                  {result.meals.map((meal, mealIndex) => (
+                    <div
+                      key={mealIndex}
+                      className="p-4 rounded-lg bg-background shadow-neumorphic-inset"
+                    >
+                      <h4 className="font-semibold">
+                        {meal.meal_time} ({meal.calories} kcal)
+                      </h4>
+                      <p className="text-muted-foreground text-sm">
+                        {meal.food_items}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                 
-               </div>
+              </div>
             )}
             {!isPending && !result && (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
-                 <Bot size={48} className="mb-4" />
-                <p>Your personalized diet plan will appear here once generated.</p>
+                <Bot size={48} className="mb-4" />
+                <p>
+                  Your personalized diet plan will appear here once generated.
+                </p>
               </div>
             )}
           </CardContent>

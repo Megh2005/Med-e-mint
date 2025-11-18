@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, User as FirebaseAuthUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { useEffect, useState } from "react";
+import { onAuthStateChanged, User as FirebaseAuthUser } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
 export interface UserProfile {
   uid: string;
   email: string;
-  role: 'doctor' | 'patient'; 
+  role: "doctor" | "patient" | "ngo";
   name?: string;
 }
 
@@ -19,7 +19,7 @@ export function useAuth() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDocRef = doc(db, "users", firebaseUser.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
