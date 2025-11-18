@@ -56,18 +56,11 @@ export async function GET(req: NextRequest) {
 
       if (r === "doctor") {
         requirements = ["doctor"];
-      } else if (r === "patient") {
-        // remove duplicate "funds" and include the requirements for patients
-        requirements = Array.from(
-          new Set(["location", "funds", "equipments", "logistics"])
-        );
-        // exclude campaigns listed by the requesting email if provided
       } else if (r === "ngo") {
         requirements = ["location", "funds", "equipments", "logistics"];
       } else {
-        // normalize common singular/plural forms and fall back to matching the role value
-        const normalized = r === "fund" ? "funds" : r;
-        requirements = [normalized];
+        // no filtering for patients or any other roles — return undefined to fetch all campaigns
+        return undefined;
       }
 
       const uniq = Array.from(new Set(requirements));
