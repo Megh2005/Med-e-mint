@@ -32,7 +32,7 @@ const features = [
     link: "/diet-coach",
   },
   {
-    title: "SOS",
+    title: "NGO",
     description: "Help NGOs with their upcoming campaigns.",
     icon: <HandHelping className="size-8 text-primary" />,
     link: "/sos",

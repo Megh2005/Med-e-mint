@@ -25,6 +25,11 @@ import {
 } from "@/components/ui/dialog";
 import { AlertDialogHeader } from "@/components/ui/alert-dialog";
 import MapComponent from "@/components/MapComponent";
+import dynamic from "next/dynamic";
+
+const DynamicMapComponent = dynamic(() => import("@/components/MapComponent"), {
+  ssr: false,
+});
 
 export interface Campaign {
   createdAt: string;
@@ -44,23 +49,8 @@ export default function SOSPage() {
   const pathname = usePathname();
   const [myCampaigns, setMyCampaigns] = useState<Campaign[]>([]);
   const [upcomingCampaigns, setUpcomingCampaigns] = useState<Campaign[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(
-    null
-  );
-  const [fetchingCampaigns, setFetchingCampaigns] = useState(false);
   const [fetchingMyCampaigns, setFetchingMyCampaigns] = useState(false);
-
-  function openCampaignDetails(campaign: Campaign) {
-    setSelectedCampaign(campaign);
-    setDialogOpen(true);
-  }
-
-  function closeDialog() {
-    setDialogOpen(false);
-    // optional: clear selection after close
-    setTimeout(() => setSelectedCampaign(null), 200);
-  }
+  const [fetchingCampaigns, setFetchingCampaigns] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -70,8 +60,6 @@ export default function SOSPage() {
 
   useEffect(() => {
     if (!user || !user.role) return;
-    //get upcoming campaigns based on role
-
     async function fetchCampaigns() {
       try {
         setFetchingCampaigns(true);
@@ -128,7 +116,7 @@ export default function SOSPage() {
     <div className="container mx-auto px-4 md:px-6 py-12">
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold font-headline text-foreground">
-          SOS
+          NGO Campaigns
         </h1>
         <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
           Help NGOs with their upcoming campaigns.
@@ -169,108 +157,24 @@ export default function SOSPage() {
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {upcomingCampaigns.map((campaign) => (
-                    <Card
-                      key={campaign.id}
-                      className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
-                      onClick={() => openCampaignDetails(campaign)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ")
-                          openCampaignDetails(campaign);
-                      }}
-                    >
-                      <h2 className="text-lg font-semibold mb-2">
-                        {campaign.name}
-                      </h2>
+                    <Link href={`/campaign/${campaign.id}`} key={campaign.id}>
+                      <Card
+                        className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <h2 className="text-lg font-semibold mb-2">
+                          {campaign.name}
+                        </h2>
 
-                      <p className="text-sm text-muted-foreground">
-                        Date:{" "}
-                        {new Date(campaign.eventDate).toLocaleDateString()}
-                      </p>
-                    </Card>
+                        <p className="text-sm text-muted-foreground">
+                          Date:{" "}
+                          {new Date(campaign.eventDate).toLocaleDateString()}
+                        </p>
+                      </Card>
+                    </Link>
                   ))}
                 </div>
-
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        {selectedCampaign
-                          ? selectedCampaign.name
-                          : "Campaign details"}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {selectedCampaign?.locationDesc ||
-                          "No additional description provided."}
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    {selectedCampaign && (
-                      <div className="space-y-4 mt-2">
-                        <p className="text-sm text-muted-foreground">
-                          <strong className="font-bold text-neutral-800">
-                            Location:
-                          </strong>
-                          <MapComponent
-                            initialPosition={{
-                              lng: Number(
-                                selectedCampaign.location.split(",")[0]
-                              ),
-                              lat: Number(
-                                selectedCampaign.location.split(",")[1]
-                              ),
-                            }}
-                            draggable={false}
-                          />
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          <strong className="font-bold text-neutral-800">
-                            Date:
-                          </strong>{" "}
-                          {new Date(
-                            selectedCampaign.eventDate
-                          ).toLocaleString()}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          <strong className="font-bold text-neutral-800">
-                            Listed by:
-                          </strong>{" "}
-                          {selectedCampaign.listedBy} (
-                          {selectedCampaign.listedByEmail})
-                        </p>
-
-                        <div>
-                          <strong className="text-sm block font-bold mb-2 text-neutral-800">
-                            Requirements:
-                          </strong>
-                          {selectedCampaign.requirements &&
-                          selectedCampaign.requirements.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                              {selectedCampaign.requirements.map((req, i) => (
-                                <Badge key={i} className="text-sm">
-                                  {req}
-                                </Badge>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              No specific requirements.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <DialogFooter>
-                      <div className="flex justify-end gap-2 w-full">
-                        <Button variant="ghost" onClick={closeDialog}>
-                          Close
-                        </Button>
-                      </div>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
               </>
             )}
           </div>
@@ -295,106 +199,23 @@ export default function SOSPage() {
               ) : (
                 <>
                   {myCampaigns.map((campaign) => (
-                    <Card
-                      key={campaign.id}
-                      className="p-4"
-                      onClick={() => openCampaignDetails(campaign)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ")
-                          openCampaignDetails(campaign);
-                      }}
-                    >
-                      <h2 className="text-lg font-semibold mb-2">
-                        {campaign.name}
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
-                        Date:{" "}
-                        {new Date(campaign.eventDate).toLocaleDateString()}
-                      </p>
-                    </Card>
+                    <Link href={`/campaign/${campaign.id}`} key={campaign.id}>
+                      <Card
+                        key={campaign.id}
+                        className="p-4"
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <h2 className="text-lg font-semibold mb-2">
+                          {campaign.name}
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          Date:{" "}
+                          {new Date(campaign.eventDate).toLocaleDateString()}
+                        </p>
+                      </Card>
+                    </Link>
                   ))}
-
-                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>
-                          {selectedCampaign
-                            ? selectedCampaign.name
-                            : "Campaign details"}
-                        </DialogTitle>
-                        <DialogDescription>
-                          {selectedCampaign?.locationDesc ||
-                            "No additional description provided."}
-                        </DialogDescription>
-                      </DialogHeader>
-
-                      {selectedCampaign && (
-                        <div className="space-y-4 mt-2">
-                          <p className="text-sm text-muted-foreground">
-                            <strong className="font-bold text-neutral-800">
-                              Location:
-                            </strong>
-                            <MapComponent
-                              initialPosition={{
-                                lng: Number(
-                                  selectedCampaign.location.split(",")[0]
-                                ),
-                                lat: Number(
-                                  selectedCampaign.location.split(",")[1]
-                                ),
-                              }}
-                              draggable={false}
-                            />
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            <strong className="font-bold text-neutral-800">
-                              Date:
-                            </strong>{" "}
-                            {new Date(
-                              selectedCampaign.eventDate
-                            ).toLocaleString()}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            <strong className="font-bold text-neutral-800">
-                              Listed by:
-                            </strong>{" "}
-                            {selectedCampaign.listedBy} (
-                            {selectedCampaign.listedByEmail})
-                          </p>
-
-                          <div>
-                            <strong className="text-sm block font-bold mb-2 text-neutral-800">
-                              Requirements:
-                            </strong>
-                            {selectedCampaign.requirements &&
-                            selectedCampaign.requirements.length > 0 ? (
-                              <div className="flex flex-wrap gap-2">
-                                {selectedCampaign.requirements.map((req, i) => (
-                                  <Badge key={i} className="text-sm">
-                                    {req}
-                                  </Badge>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-sm text-muted-foreground">
-                                No specific requirements.
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      <DialogFooter>
-                        <div className="flex justify-end gap-2 w-full">
-                          <Button variant="ghost" onClick={closeDialog}>
-                            Close
-                          </Button>
-                        </div>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
                 </>
               )}
             </div>

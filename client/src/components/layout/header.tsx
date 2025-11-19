@@ -45,7 +45,7 @@ const mainNavLinks = [
     icon: <ScanLine />,
   },
   { href: "/diet-coach", label: "Diet Coach", icon: <Bot /> },
-  { href: "/sos", label: "SOS", icon: <HelpingHand /> },
+  { href: "/sos", label: "Campaigns", icon: <HelpingHand /> },
   { href: "/mint", label: "Mint Docs", icon: <Gem /> },
   { href: "/mint/docs", label: "Minted Docs", icon: <Pickaxe /> },
   { href: "/contact", label: "Contact Us", icon: <Contact /> },

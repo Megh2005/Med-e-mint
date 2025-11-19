@@ -12,10 +12,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 import dynamic from "next/dynamic";
 
-const MapComponent = dynamic(() => import("@/components/MapComponent"), {
+const SearchMap = dynamic(() => import("@/components/SearchMap"), {
   ssr: false,
 });
 // @ts-ignore: allow importing CSS without type declarations
@@ -191,7 +192,7 @@ export default function ListCampaigns() {
             className="text-foreground hover:text-primary cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to SOS
+            Back to Campaigns
           </Button>
         </Link>
       </div>
@@ -234,10 +235,7 @@ export default function ListCampaigns() {
                         {userLocation.error.message}
                       </div>
                     ) : (
-                      <MapComponent
-                        initialPosition={userLocation.coordinates}
-                        onLocationChange={handleLocationUpdate}
-                      />
+                      <SearchMap onLocationChange={handleLocationUpdate} />
                     )
                   ) : (
                     <div className="h-64 flex justify-center items-center bg-gray-200 rounded-xl">
@@ -307,16 +305,14 @@ export default function ListCampaigns() {
                   <div className="space-y-2">
                     {((eventData.requirements ?? [""]) as string[]).map(
                       (req, idx) => {
-                        const options = [
-                          "",
-                          "doctor",
-                          "location",
-                          "volunteers",
-                          "equipments",
-                          "funds",
-                          "logistics",
-                        ];
-                        return (
+                                                  const options = [
+                                                    "",
+                                                    "doctor",
+                                                    "volunteers",
+                                                    "equipments",
+                                                    "funds",
+                                                    "logistics",
+                                                  ];                        return (
                           <div
                             key={idx}
                             className="flex items-center space-x-2"
@@ -379,7 +375,6 @@ export default function ListCampaigns() {
                 </div>
               </div>
 
-              {/* Details */}
               <div className="space-y-2">
                 <Label htmlFor="details">Event Date</Label>
                 <Input
@@ -387,6 +382,17 @@ export default function ListCampaigns() {
                   name="eventDate"
                   type="date"
                   value={eventData.eventDate}
+                  className="bg-background shadow-neumorphic-inset"
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  id="locationDesc"
+                  name="locationDesc"
+                  placeholder="Tell us more about the event"
+                  value={eventData.locationDesc}
                   className="bg-background shadow-neumorphic-inset"
                   onChange={handleInputChange}
                 />
