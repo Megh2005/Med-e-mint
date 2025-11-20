@@ -31,17 +31,7 @@ const DynamicMapComponent = dynamic(() => import("@/components/MapComponent"), {
   ssr: false,
 });
 
-export interface Campaign {
-  createdAt: string;
-  eventDate: string;
-  id: string;
-  listedBy: string;
-  listedByEmail: string;
-  location: string;
-  locationDesc: string;
-  name: string;
-  requirements: string[];
-}
+import { Campaign } from "@/types";
 
 export default function SOSPage() {
   const { user, loading: authLoading } = useAuth();

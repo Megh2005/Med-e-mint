@@ -114,7 +114,7 @@ const DocDetailPage = () => {
                 href={doc.tokenURI.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
+                className="text-primary hover:underline"
               >
                 {doc.tokenURI}
               </a>

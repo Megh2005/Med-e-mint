@@ -8,10 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
-import { Campaign } from "../../../../app/sos/page";
+import { Campaign } from "@/types";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  User,
+  Mail,
+  CheckCircle2,
+} from "lucide-react";
 
 const MapComponent = dynamic(() => import("@/components/MapComponent"), {
   ssr: false,
@@ -47,11 +54,11 @@ export default function CampaignDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="space-y-4 w-full max-w-md px-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-3/4 mx-auto" />
-          <Skeleton className="h-8 w-1/2 mx-auto" />
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-white to-background">
+        <div className="space-y-4 w-full max-w-3xl px-4">
+          <Skeleton className="h-12 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
       </div>
     );
@@ -59,74 +66,144 @@ export default function CampaignDetailsPage() {
 
   if (!campaign) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p>Campaign not found.</p>
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-white to-background">
+        <div className="text-center">
+          <p className="text-lg text-gray-600 mb-4">Campaign not found.</p>
+          <Link href="/sos">
+            <Button className="bg-white shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] hover:shadow-[inset_8px_8px_16px_#d1d9e6,inset_-8px_-8px_16px_#ffffff] transition-all duration-300 text-primary font-semibold rounded-2xl px-6 py-3">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Campaigns
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 md:px-6 py-12">
-        <div className="mb-4">
-        <Link href="/sos">
-          <Button
-            variant="ghost"
-            className="text-foreground hover:text-primary cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-        </Link>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>{campaign.name}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            <strong className="font-bold text-neutral-800">
-              Date:
-            </strong>{" "}
-            {new Date(campaign.eventDate).toLocaleString()}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            <strong className="font-bold text-neutral-800">
-              Listed by:
-            </strong>{" "}
-            {campaign.listedBy} ({campaign.listedByEmail})
-          </p>
-          <div>
-            <strong className="text-sm block font-bold mb-2 text-neutral-800">
-              Requirements:
-            </strong>
-            {campaign.requirements && campaign.requirements.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {campaign.requirements.map((req, i) => (
-                  <Badge key={i} className="text-sm">
-                    {req}
-                  </Badge>
-                ))}
+    <div className="min-h-screen bg-gradient-to-br from-background via-white to-background">
+      <div className="container mx-auto px-4 md:px-6 py-8 md:py-12">
+        <div className="mb-6">
+          <Link href="/sos">
+            <Button className="bg-gradient-to-br from-background to-white shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] hover:shadow-[inset_8px_8px_16px_#d1d9e6,inset_-8px_-8px_16px_#ffffff] transition-all duration-300 text-primary font-semibold rounded-2xl px-6 py-3 border-0">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Campaigns
+            </Button>
+          </Link>
+        </div>
+
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-gradient-to-br from-background to-white rounded-3xl shadow-[20px_20px_40px_#d1d9e6,-20px_-20px_40px_#ffffff] p-8 md:p-10">
+            <div className="space-y-2 pb-6 mb-8 border-b border-border">
+              <h1 className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
+                {campaign.name}
+              </h1>
+            </div>
+
+            <div className="space-y-8">
+              {/* Event Details Section */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-5 rounded-2xl bg-gradient-to-br from-white to-background shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff]">
+                    <Calendar className="w-5 h-5 mt-0.5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
+                        Event Date
+                      </p>
+                      <p className="text-sm font-medium text-gray-700">
+                        {new Date(campaign.eventDate).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-5 rounded-2xl bg-gradient-to-br from-white to-background shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff]">
+                    <MapPin className="w-5 h-5 mt-0.5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
+                        Venue
+                      </p>
+                      <p className="text-sm font-medium text-gray-700">
+                        {campaign.eventVenue}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-5 rounded-2xl bg-gradient-to-br from-white to-background shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff]">
+                    <User className="w-5 h-5 mt-0.5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
+                        Listed By
+                      </p>
+                      <p className="text-sm font-medium text-gray-700">
+                        {campaign.listedBy}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-5 rounded-2xl bg-gradient-to-br from-white to-background shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff]">
+                    <Mail className="w-5 h-5 mt-0.5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
+                        Contact
+                      </p>
+                      <p className="text-sm font-medium text-gray-700 break-all">
+                        {campaign.listedByEmail}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No specific requirements.
-              </p>
-            )}
+
+              {/* Requirements Section */}
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-white to-background shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff]">
+                <div className="flex items-center gap-2 mb-4">
+                  <CheckCircle2 className="w-5 h-5 text-primary" />
+                  <h3 className="text-sm font-bold text-primary uppercase tracking-wide">
+                    Requirements
+                  </h3>
+                </div>
+                {campaign.requirements && campaign.requirements.length > 0 ? (
+                  <div className="flex flex-wrap gap-3">
+                    {campaign.requirements.map((req, i) => (
+                      <span
+                        key={i}
+                        className="px-4 py-2 text-sm font-medium text-black bg-primary rounded-full shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff]"
+                      >
+                        {req}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    No specific requirements listed.
+                  </p>
+                )}
+              </div>
+
+              {/* Location Map Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  <h3 className="text-sm font-bold text-primary uppercase tracking-wide">
+                    Location
+                  </h3>
+                </div>
+                <div className="rounded-2xl overflow-hidden shadow-[12px_12px_24px_#d1d9e6,-12px_-12px_24px_#ffffff]">
+                  <MapComponent
+                    initialPosition={{
+                      lng: Number(campaign.location.split(",")[0]),
+                      lat: Number(campaign.location.split(",")[1]),
+                    }}
+                    draggable={false}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-sm text-muted-foreground">
-            <strong className="font-bold text-neutral-800">
-              Location:
-            </strong>
-            <MapComponent
-              initialPosition={{
-                lng: Number(campaign.location.split(",")[0]),
-                lat: Number(campaign.location.split(",")[1]),
-              }}
-              draggable={false}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

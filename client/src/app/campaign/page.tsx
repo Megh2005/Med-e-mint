@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -19,18 +20,16 @@ import dynamic from "next/dynamic";
 const SearchMap = dynamic(() => import("@/components/SearchMap"), {
   ssr: false,
 });
-// @ts-ignore: allow importing CSS without type declarations
 
 import "leaflet/dist/leaflet.css";
 import Link from "next/link";
-import { ArrowLeft, LoaderCircle, Plus } from "lucide-react";
+import { ArrowLeft, LoaderCircle, Plus, X } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // --- Custom Geolocation Hook ---
-// This hook gets the user's current location
 const useGeolocation = () => {
   const [location, setLocation] = useState<{
     loaded: boolean;
@@ -79,6 +78,19 @@ const useGeolocation = () => {
   return location;
 };
 
+// --- Helper function to get date strings ---
+const getTodayDate = () => {
+  const today = new Date();
+  return today.toISOString().split("T")[0];
+};
+
+const getMaxDate = () => {
+  const today = new Date();
+  const maxDate = new Date(today);
+  maxDate.setFullYear(maxDate.getFullYear() + 1);
+  return maxDate.toISOString().split("T")[0];
+};
+
 // --- Main Form Component ---
 interface EventData {
   name: string;
@@ -86,6 +98,7 @@ interface EventData {
   location: string;
   locationDesc: string;
   requirements: string[];
+  eventVenue: string;
 }
 
 export default function ListCampaigns() {
@@ -94,7 +107,8 @@ export default function ListCampaigns() {
     eventDate: "",
     location: "",
     locationDesc: "",
-    requirements: [],
+    requirements: [""],
+    eventVenue: "",
   });
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -124,10 +138,36 @@ export default function ListCampaigns() {
     }));
   };
 
+  const handleRequirementChange = (value: string, index: number) => {
+    const newRequirements = [...eventData.requirements];
+    newRequirements[index] = value;
+    setEventData({ ...eventData, requirements: newRequirements });
+  };
+
+  const addRequirement = () => {
+    setEventData({
+      ...eventData,
+      requirements: [...eventData.requirements, ""],
+    });
+  };
+
+  const removeRequirement = (index: number) => {
+    if (eventData.requirements.length <= 1) return;
+    const newRequirements = eventData.requirements.filter(
+      (_, i) => i !== index
+    );
+    setEventData({ ...eventData, requirements: newRequirements });
+  };
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!eventData.location || !eventData.name || !eventData.eventDate) {
+    if (
+      !eventData.location ||
+      !eventData.name ||
+      !eventData.eventDate ||
+      !eventData.eventVenue
+    ) {
       console.log("Please fill in all required fields.");
       return;
     }
@@ -137,11 +177,15 @@ export default function ListCampaigns() {
     const fd = new FormData();
     fd.append("name", eventData.name);
     fd.append("listedBy", user?.displayName || "Anonymous");
-    fd.append("listedByEmail", user?.email || "unknown"),
-      fd.append("eventDate", eventData.eventDate);
+    fd.append("listedByEmail", user?.email || "unknown");
+    fd.append("eventDate", eventData.eventDate);
     fd.append("location", eventData.location);
+    fd.append("eventVenue", eventData.eventVenue);
     fd.append("locationDesc", eventData.locationDesc);
-    fd.append("requirements", JSON.stringify(eventData.requirements || []));
+    fd.append(
+      "requirements",
+      JSON.stringify(eventData.requirements.filter((r) => r) || [])
+    );
 
     try {
       const res = await axios.post("/api/campaign", fd);
@@ -199,57 +243,159 @@ export default function ListCampaigns() {
     );
   }
 
+  const requirementsOptions = [
+    "",
+    "doctor",
+    "volunteers",
+    "equipments",
+    "funds",
+    "logistics",
+  ];
+
   return (
-    <div className="flex flex-col justify-center items-center container mx-auto px-4 md:px-6 py-12">
-      <div className="mb-4">
+    <div className="container mx-auto px-4 md:px-6 py-12">
+      <div className="mb-8">
         <Link href="/sos">
           <Button
             variant="ghost"
             className="text-foreground hover:text-primary cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            Back to Campaigns
           </Button>
         </Link>
       </div>
-      <Card className="w-full max-w-7xl shadow-lg rounded-xl">
+      <Card className="w-full max-w-7xl mx-auto shadow-lg rounded-xl">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-3xl font-bold">
-            List your upcoming campaign
+            List Your Upcoming Campaign
           </CardTitle>
-          <CardDescription className="text-gray-500">
-            Click on the map to set the incident location, then fill out the
-            form below.
+          <CardDescription className="text-muted-foreground">
+            Fill out the details below to create a new campaign. Pinpoint the
+            location on the map.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onSubmit} className="flex space-x-6">
-            <div className="w-2/3 space-y-4">
-              {/* Map Integration */}
+          <form id="campaign-form" onSubmit={onSubmit} className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
               <div className="space-y-2">
-                <Label>Incident Location</Label>
-                {isClient ? (
-                  userLocation.loaded ? (
-                    userLocation.error ? (
-                      <div className="text-red-500">
-                        {userLocation.error.message}
-                      </div>
-                    ) : (
-                      <SearchMap onLocationChange={handleLocationUpdate} />
-                    )
-                  ) : (
-                    <div className="h-64 flex justify-center items-center bg-gray-200 rounded-xl">
-                      <p>Loading map...</p>
-                    </div>
-                  )
-                ) : (
-                  <div className="h-64 flex justify-center items-center bg-gray-200 rounded-xl">
-                    <p>Initializing map...</p>
-                  </div>
-                )}
+                <Label htmlFor="name">Campaign Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder="e.g., Free Health Checkup Camp"
+                  value={eventData.name}
+                  onChange={handleInputChange}
+                />
               </div>
 
-              {/* Location Coordinates Input (Read-only) */}
+              <div className="space-y-2">
+                <Label htmlFor="eventVenue">Event Venue</Label>
+                <Input
+                  id="eventVenue"
+                  name="eventVenue"
+                  placeholder="e.g., City Community Hall"
+                  value={eventData.eventVenue}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="eventDate">Event Date</Label>
+                <Input
+                  id="eventDate"
+                  name="eventDate"
+                  type="date"
+                  min={getTodayDate()}
+                  max={getMaxDate()}
+                  value={eventData.eventDate}
+                  onChange={handleInputChange}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Select a date from today up to 1 year in the future
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="locationDesc">Description</Label>
+                <Textarea
+                  id="locationDesc"
+                  name="locationDesc"
+                  placeholder="Tell us more about the campaign"
+                  value={eventData.locationDesc}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Requirements</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addRequirement}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {eventData.requirements.map((req, idx) => (
+                    <div key={idx} className="flex items-center space-x-2">
+                      <select
+                        value={req}
+                        onChange={(e) =>
+                          handleRequirementChange(e.target.value, idx)
+                        }
+                        className="flex-1 bg-background border border-input rounded-md p-2 text-sm"
+                      >
+                        {requirementsOptions.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt === "" ? "Select requirement" : opt}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeRequirement(idx)}
+                        disabled={eventData.requirements.length === 1}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label>Campaign Location</Label>
+                <div className="h-96 rounded-lg overflow-hidden border">
+                  {isClient ? (
+                    userLocation.loaded ? (
+                      userLocation.error ? (
+                        <div className="text-red-500 flex items-center justify-center h-full">
+                          {userLocation.error.message}
+                        </div>
+                      ) : (
+                        <SearchMap onLocationChange={handleLocationUpdate} />
+                      )
+                    ) : (
+                      <div className="h-full flex justify-center items-center bg-muted">
+                        <p>Loading map...</p>
+                      </div>
+                    )
+                  ) : (
+                    <div className="h-full flex justify-center items-center bg-muted">
+                      <p>Initializing map...</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="location">Selected Coordinates</Label>
                 <Input
@@ -260,162 +406,36 @@ export default function ListCampaigns() {
                   placeholder="Click on the map to set location"
                   value={eventData.location}
                 />
-                <p className="text-sm text-gray-500">Latitude, Longitude</p>
+                <p className="text-sm text-muted-foreground">
+                  Latitude, Longitude
+                </p>
               </div>
-            </div>
-            <div className="w-1/3 space-y-4">
-              {/* Report Type */}
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  placeholder="Name of the event"
-                  value={eventData.name}
-                  className="bg-background shadow-neumorphic-inset"
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-start">
-                  <Label className="pt-4">Requirements</Label>
-                  <div className="flex items-center justify-between w-full">
-                    <div />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="px-2 py-1 mr-2"
-                      onClick={() =>
-                        setEventData((prev) => {
-                          const reqs = [
-                            ...(((prev as any).requirements ?? [
-                              "",
-                            ]) as string[]),
-                          ];
-                          reqs.push("");
-                          return { ...(prev as any), requirements: reqs };
-                        })
-                      }
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {((eventData.requirements ?? [""]) as string[]).map(
-                      (req, idx) => {
-                                                  const options = [
-                                                    "",
-                                                    "doctor",
-                                                    "volunteers",
-                                                    "equipments",
-                                                    "funds",
-                                                    "logistics",
-                                                  ];                        return (
-                          <div
-                            key={idx}
-                            className="flex items-center space-x-2"
-                          >
-                            <select
-                              id={`requirement-${idx}`}
-                              name={`requirement-${idx}`}
-                              value={req}
-                              onChange={(e) =>
-                                setEventData((prev) => {
-                                  const reqs = [
-                                    ...(((prev as any).requirements ?? [
-                                      "",
-                                    ]) as string[]),
-                                  ];
-                                  reqs[idx] = e.target.value;
-                                  return {
-                                    ...(prev as any),
-                                    requirements: reqs,
-                                  };
-                                })
-                              }
-                              className="flex-1 bg-background shadow-neumorphic-inset p-2 rounded"
-                            >
-                              {options.map((opt) => (
-                                <option key={opt} value={opt}>
-                                  {opt === "" ? "Select requirement" : opt}
-                                </option>
-                              ))}
-                            </select>
-
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              className="px-2 py-1"
-                              disabled={idx === 0}
-                              onClick={() =>
-                                setEventData((prev) => {
-                                  const reqs = [
-                                    ...(((prev as any).requirements ?? [
-                                      "",
-                                    ]) as string[]),
-                                  ];
-                                  if (reqs.length <= 1) return prev;
-                                  reqs.splice(idx, 1);
-                                  return {
-                                    ...(prev as any),
-                                    requirements: reqs,
-                                  };
-                                })
-                              }
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        );
-                      }
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="details">Event Date</Label>
-                <Input
-                  id="eventDate"
-                  name="eventDate"
-                  type="date"
-                  value={eventData.eventDate}
-                  className="bg-background shadow-neumorphic-inset"
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
-                  id="locationDesc"
-                  name="locationDesc"
-                  placeholder="Tell us more about the event"
-                  value={eventData.locationDesc}
-                  className="bg-background shadow-neumorphic-inset"
-                  onChange={handleInputChange}
-                />
-              </div>
-              <Button
-                disabled={
-                  !eventData.location ||
-                  !eventData.name ||
-                  !eventData.eventDate ||
-                  submitting
-                }
-                type="submit"
-                className="shadow-neumorphic active:shadow-neumorphic-inset transition-shadow duration-200"
-              >
-                {submitting ? (
-                  <LoaderCircle className="size-4 animate-spin" />
-                ) : (
-                  "List Event"
-                )}
-              </Button>
             </div>
           </form>
         </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button
+            form="campaign-form"
+            type="submit"
+            size="lg"
+            disabled={
+              !eventData.location ||
+              !eventData.name ||
+              !eventData.eventDate ||
+              !eventData.eventVenue ||
+              submitting
+            }
+          >
+            {submitting ? (
+              <>
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                Listing...
+              </>
+            ) : (
+              "List Campaign"
+            )}
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );
