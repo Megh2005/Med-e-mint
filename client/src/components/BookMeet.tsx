@@ -2,37 +2,35 @@
 "use client";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import Cal from "@calcom/embed-react";
 import React from "react";
 
 const BookMeeting = ({ children }: { children: React.ReactNode }) => {
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="overflow-y-auto sm:w-full w-screen sm:max-w-6xl">
-        <DialogHeader>
-          <DialogTitle>Book a call</DialogTitle>
-          <DialogDescription>
+    <Sheet>
+      <SheetTrigger asChild>{children}</SheetTrigger>
+      <SheetContent className="overflow-y-auto" side="right">
+        <SheetHeader>
+          <SheetTitle>Book a call</SheetTitle>
+          <SheetDescription>
             Book a call with this doctor to discuss your health issues.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="pb-8">
+          </SheetDescription>
+        </SheetHeader>
+        <div className="py-8">
           <Cal
             calLink="iammeghdeb/30min"
-            style={{ width: "100%", height: "500px" }}
+            style={{ width: "100%", height: "100vh" }}
           ></Cal>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 };
 
