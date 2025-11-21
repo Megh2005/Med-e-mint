@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   addDoc,
   collection,
@@ -22,13 +22,16 @@ import {
 import { db } from "@/lib/firebase";
 import { Registration } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { Campaign } from "@/types";
 
 interface CampaignRegistrationFormProps {
   campaignId: string;
+  campaign: Campaign;
 }
 
 export default function CampaignRegistrationForm({
   campaignId,
+  campaign,
 }: CampaignRegistrationFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -106,17 +109,21 @@ export default function CampaignRegistrationForm({
     }
   };
 
+  if (user && user.email === campaign.listedByEmail) {
+    return null;
+  }
+
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button className="w-full mt-6 bg-gradient-to-br from-green-500 to-green-600 text-white shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] transition-all duration-300 font-semibold rounded-2xl px-6 py-3 border-0">
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button className="w-full mt-6 bg-primary text-primary-foreground shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] transition-all duration-300 font-semibold rounded-2xl px-6 py-3 border-0">
           Apply Now
         </Button>
-      </SheetTrigger>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Register for Campaign</SheetTitle>
-        </SheetHeader>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Register for Campaign</DialogTitle>
+        </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div>
             <Label htmlFor="name">Name</Label>
@@ -144,7 +151,7 @@ export default function CampaignRegistrationForm({
             {isSubmitting ? "Registering..." : "Register"}
           </Button>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

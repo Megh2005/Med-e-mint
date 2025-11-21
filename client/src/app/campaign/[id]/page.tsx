@@ -21,7 +21,6 @@ import {
   CheckCircle2,
   Pencil,
 } from "lucide-react";
-import CampaignRegistrationForm from "./CampaignRegistrationForm";
 
 const MapComponent = dynamic(() => import("@/components/MapComponent"), {
   ssr: false,
@@ -98,13 +97,13 @@ export default function CampaignDetailsPage() {
           {user && user.email === campaign.listedByEmail && (
             <div className="flex gap-4">
               <Link href={`/campaign/${id}/edit`}>
-                <Button className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] transition-all duration-300 font-semibold rounded-2xl px-6 py-3 border-0">
+                <Button className="bg-accent text-accent-foreground shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] transition-all duration-300 font-semibold rounded-2xl px-6 py-3 border-0">
                   <Pencil className="w-4 h-4 mr-2" />
                   Edit Campaign
                 </Button>
               </Link>
               <Link href={`/campaign/${id}/registrations`}>
-                <Button className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] transition-all duration-300 font-semibold rounded-2xl px-6 py-3 border-0">
+                <Button className="bg-secondary text-secondary-foreground shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] transition-all duration-300 font-semibold rounded-2xl px-6 py-3 border-0">
                   <User className="w-4 h-4 mr-2" />
                   View Registrations
                 </Button>
@@ -234,9 +233,13 @@ export default function CampaignDetailsPage() {
               </div>
 
               {/* Registration Button */}
-              {user && (
+              {user && user.email !== campaign.listedByEmail && (
                 <div className="mt-8">
-                  <CampaignRegistrationForm campaignId={campaign.id} />
+                  <Link href={`/campaign/${id}/register`}>
+                    <Button className="w-full mt-6 bg-primary text-primary-foreground shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] transition-all duration-300 font-semibold rounded-2xl px-6 py-3 border-0">
+                      Apply Now
+                    </Button>
+                  </Link>
                 </div>
               )}
             </div>
