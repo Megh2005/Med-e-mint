@@ -25,58 +25,12 @@ import "leaflet/dist/leaflet.css";
 import Link from "next/link";
 import { ArrowLeft, LoaderCircle, Plus, X } from "lucide-react";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// --- Custom Geolocation Hook ---
-const useGeolocation = () => {
-  const [location, setLocation] = useState<{
-    loaded: boolean;
-    coordinates: { lat: number; lng: number };
-    error: GeolocationPositionError | null;
-  }>({
-    loaded: false,
-    coordinates: { lat: 0, lng: 0 },
-    error: null,
-  });
-
-  const onSuccess = (position: GeolocationPosition) => {
-    setLocation({
-      loaded: true,
-      coordinates: {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      },
-      error: null,
-    });
-  };
-
-  const onError = (error: GeolocationPositionError) => {
-    setLocation({
-      loaded: true,
-      coordinates: { lat: 0, lng: 0 },
-      error,
-    });
-  };
-
-  useEffect(() => {
-    if (!("geolocation" in navigator)) {
-      setLocation((prevState) => ({
-        ...prevState,
-        loaded: true,
-        error: {
-          code: 0,
-          message: "Geolocation not supported",
-        } as GeolocationPositionError,
-      }));
-    } else {
-      navigator.geolocation.getCurrentPosition(onSuccess, onError);
-    }
-  }, []);
-
-  return location;
-};
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Campaign } from "@/types";
 
 // --- Helper function to get date strings ---
 const getTodayDate = () => {
@@ -102,30 +56,50 @@ interface EventData {
   eventVenue: string;
 }
 
-export default function ListCampaigns() {
-  const [eventData, setEventData] = useState<EventData>({
-    name: "",
-    eventDate: "",
-    eventTime: "",
-    location: "",
-    description: "",
-    requirements: [""],
-    eventVenue: "",
-  });
+export default function EditCampaignPage() {
+  const [eventData, setEventData] = useState<EventData | null>(null);
   const router = useRouter();
+  const { id } = useParams();
   const [submitting, setSubmitting] = useState(false);
   const { user, loading: authLoading } = useAuth();
-
   const [isClient, setIsClient] = useState(false);
-  const userLocation = useGeolocation();
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    if (!id) return;
+
+    async function fetchCampaign() {
+      try {
+        const docRef = doc(db, "campaigns", id as string);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const campaign = { id: docSnap.id, ...docSnap.data() } as Campaign;
+          const eventDateTime = new Date(campaign.eventDate);
+          setEventData({
+            name: campaign.name,
+            eventDate: eventDateTime.toISOString().split("T")[0],
+            eventTime: eventDateTime.toTimeString().split(" ")[0].substring(0, 5),
+            location: campaign.location,
+            description: campaign.description,
+            requirements: campaign.requirements,
+            eventVenue: campaign.eventVenue,
+          });
+        } else {
+          console.log("No such document!");
+        }
+      } catch (error) {
+        console.error("Error fetching campaign:", error);
+      }
+    }
+
+    fetchCampaign();
+  }, [id]);
 
   const handleLocationUpdate = (loc: { lat: number; lng: number }) => {
+    if (!eventData) return;
     setEventData((prevData) => ({
-      ...prevData,
+      ...prevData!,
       location: `${loc.lng}, ${loc.lat}`,
     }));
   };
@@ -133,20 +107,23 @@ export default function ListCampaigns() {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    if (!eventData) return;
     const { name, value } = e.target;
     setEventData((prevData) => ({
-      ...prevData,
+      ...prevData!,
       [name]: value,
     }));
   };
 
   const handleRequirementChange = (value: string, index: number) => {
+    if (!eventData) return;
     const newRequirements = [...eventData.requirements];
     newRequirements[index] = value;
     setEventData({ ...eventData, requirements: newRequirements });
   };
 
   const addRequirement = () => {
+    if (!eventData) return;
     setEventData({
       ...eventData,
       requirements: [...eventData.requirements, ""],
@@ -154,7 +131,7 @@ export default function ListCampaigns() {
   };
 
   const removeRequirement = (index: number) => {
-    if (eventData.requirements.length <= 1) return;
+    if (!eventData || eventData.requirements.length <= 1) return;
     const newRequirements = eventData.requirements.filter(
       (_, i) => i !== index
     );
@@ -163,6 +140,7 @@ export default function ListCampaigns() {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!eventData) return;
 
     if (
       !eventData.location ||
@@ -181,25 +159,21 @@ export default function ListCampaigns() {
       `${eventData.eventDate}T${eventData.eventTime}`
     ).toISOString();
 
-    const fd = new FormData();
-    fd.append("name", eventData.name);
-    fd.append("listedBy", user?.displayName || "Anonymous");
-    fd.append("listedByEmail", user?.email || "unknown");
-    fd.append("eventDate", combinedDateTime);
-    fd.append("location", eventData.location);
-    fd.append("eventVenue", eventData.eventVenue);
-    fd.append("description", eventData.description);
-    fd.append(
-      "requirements",
-      JSON.stringify(eventData.requirements.filter((r) => r) || [])
-    );
+    const campaignDataToUpdate = {
+        name: eventData.name,
+        eventDate: combinedDateTime,
+        location: eventData.location,
+        description: eventData.description,
+        requirements: eventData.requirements.filter((r) => r) || [],
+        eventVenue: eventData.eventVenue,
+    }
 
     try {
-      const res = await axios.post("/api/campaign", fd);
+      const res = await axios.put(`/api/campaign/${id}`, campaignDataToUpdate);
 
       if (res.data.success) {
-        console.log("Campaign Listed successfully!");
-        router.push("/sos");
+        console.log("Campaign updated successfully!");
+        router.push(`/campaign/${id}`);
       }
     } catch (error) {
       console.log("Error submitting form:", error);
@@ -208,16 +182,7 @@ export default function ListCampaigns() {
     }
   };
 
-  useEffect(() => {
-    if (userLocation.loaded && !userLocation.error) {
-      setEventData((prevData) => ({
-        ...prevData,
-        location: `${userLocation.coordinates.lng}, ${userLocation.coordinates.lat}`,
-      }));
-    }
-  }, [userLocation]);
-
-  if (authLoading || !user) {
+  if (authLoading || !user || !eventData) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="space-y-4 w-full max-w-md px-4">
@@ -234,8 +199,7 @@ export default function ListCampaigns() {
       <div className="flex flex-col justify-center items-center container mx-auto px-4 md:px-6 py-12">
         <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
         <p className="text-muted-foreground mb-6">
-          You do not have permission to list campaigns. This section is
-          restricted to NGO users only.
+          You do not have permission to edit campaigns.
         </p>
         <Link href="/sos">
           <Button
@@ -262,24 +226,23 @@ export default function ListCampaigns() {
   return (
     <div className="container mx-auto px-4 md:px-6 py-12">
       <div className="mb-8">
-        <Link href="/sos">
+        <Link href={`/campaign/${id}`}>
           <Button
             variant="ghost"
             className="text-foreground hover:text-primary cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Campaigns
+            Back to Campaign
           </Button>
         </Link>
       </div>
       <Card className="w-full max-w-7xl mx-auto shadow-lg rounded-xl">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-3xl font-bold">
-            List Your Upcoming Campaign
+            Edit Your Campaign
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Fill out the details below to create a new campaign. Pinpoint the
-            location on the map.
+            Update the details for your campaign below.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -288,58 +251,54 @@ export default function ListCampaigns() {
             onSubmit={onSubmit}
             className="grid md:grid-cols-2 gap-8"
           >
-            <div>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Campaign Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    placeholder="e.g., Free Health Checkup Camp"
-                    value={eventData.name}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="eventVenue">Event Venue</Label>
-                  <Input
-                    id="eventVenue"
-                    name="eventVenue"
-                    placeholder="e.g., City Community Hall"
-                    value={eventData.eventVenue}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="eventDate">Event Date</Label>
-                    <Input
-                      id="eventDate"
-                      name="eventDate"
-                      type="date"
-                      min={getTodayDate()}
-                      max={getMaxDate()}
-                      value={eventData.eventDate}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="eventTime">Event Time</Label>
-                    <Input
-                      id="eventTime"
-                      name="eventTime"
-                      type="time"
-                      value={eventData.eventTime}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Select a date from today up to 1 year in the future
-                </p>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="name">Campaign Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder="e.g., Free Health Checkup Camp"
+                  value={eventData.name}
+                  onChange={handleInputChange}
+                />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="eventVenue">Event Venue</Label>
+                <Input
+                  id="eventVenue"
+                  name="eventVenue"
+                  placeholder="e.g., City Community Hall"
+                  value={eventData.eventVenue}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="eventDate">Event Date</Label>
+                  <Input
+                    id="eventDate"
+                    name="eventDate"
+                    type="date"
+                    min={getTodayDate()}
+                    max={getMaxDate()}
+                    value={eventData.eventDate}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="eventTime">Event Time</Label>
+                  <Input
+                    id="eventTime"
+                    name="eventTime"
+                    type="time"
+                    value={eventData.eventTime}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -398,20 +357,8 @@ export default function ListCampaigns() {
               <div className="space-y-2">
                 <Label>Campaign Location</Label>
                 <div className="h-96 rounded-lg overflow-hidden border">
-                  {isClient ? (
-                    userLocation.loaded ? (
-                      userLocation.error ? (
-                        <div className="text-red-500 flex items-center justify-center h-full">
-                          {userLocation.error.message}
-                        </div>
-                      ) : (
-                        <SearchMap onLocationChange={handleLocationUpdate} />
-                      )
-                    ) : (
-                      <div className="h-full flex justify-center items-center bg-muted">
-                        <p>Loading map...</p>
-                      </div>
-                    )
+                  {isClient && eventData.location ? (
+                    <SearchMap onLocationChange={handleLocationUpdate} initialPosition={{lat: parseFloat(eventData.location.split(',')[1]), lng: parseFloat(eventData.location.split(',')[0])}} />
                   ) : (
                     <div className="h-full flex justify-center items-center bg-muted">
                       <p>Initializing map...</p>
@@ -442,21 +389,15 @@ export default function ListCampaigns() {
             form="campaign-form"
             type="submit"
             size="lg"
-            disabled={
-              !eventData.location ||
-              !eventData.name ||
-              !eventData.eventDate ||
-              !eventData.eventVenue ||
-              submitting
-            }
+            disabled={submitting}
           >
             {submitting ? (
               <>
                 <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                Listing...
+                Updating...
               </>
             ) : (
-              "List Campaign"
+              "Update Campaign"
             )}
           </Button>
         </CardFooter>

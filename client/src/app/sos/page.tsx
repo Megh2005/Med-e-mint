@@ -49,13 +49,10 @@ export default function SOSPage() {
   }, [user, authLoading, router, pathname]);
 
   useEffect(() => {
-    if (!user || !user.role) return;
     async function fetchCampaigns() {
       try {
         setFetchingCampaigns(true);
-        const response = await axios.get(
-          `/api/campaign?role=${user!.role}&email=${user?.email}`
-        );
+        const response = await axios.get("/api/campaign");
         const data = response.data;
         setUpcomingCampaigns(data.campaigns || []);
       } catch (error) {
@@ -66,7 +63,7 @@ export default function SOSPage() {
     }
 
     fetchCampaigns();
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (!user || user.role !== "ngo") return;

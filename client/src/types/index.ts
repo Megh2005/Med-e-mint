@@ -9,4 +9,5 @@ export interface Campaign {
   eventVenue: string;
   name: string;
   requirements: string[];
+  description: string;
 }

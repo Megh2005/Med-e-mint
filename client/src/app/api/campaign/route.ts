@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const eventVenue = fd.get("eventVenue") as string;
     const listedBy = fd.get("listedBy") as string;
     const listedByEmail = fd.get("listedByEmail") as string;
-    const locationDesc = fd.get("locationDesc") as string;
+    const description = fd.get("description") as string;
     const requirements = JSON.parse(
       fd.get("requirements") as string
     ) as string[];
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       eventDate,
       location,
       eventVenue,
-      locationDesc,
+      description,
       requirements,
       listedBy,
       listedByEmail,

@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import { Campaign } from "@/types";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useAuth } from "@/hooks/use-auth";
 import {
   ArrowLeft,
   Calendar,
@@ -18,6 +19,7 @@ import {
   User,
   Mail,
   CheckCircle2,
+  Pencil,
 } from "lucide-react";
 
 const MapComponent = dynamic(() => import("@/components/MapComponent"), {
@@ -26,6 +28,7 @@ const MapComponent = dynamic(() => import("@/components/MapComponent"), {
 
 export default function CampaignDetailsPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -83,13 +86,22 @@ export default function CampaignDetailsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-white to-background">
       <div className="container mx-auto px-4 md:px-6 py-8 md:py-12">
-        <div className="mb-6">
+        <div className="mb-6 flex justify-between items-center">
           <Link href="/sos">
             <Button className="bg-gradient-to-br from-background to-white shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] hover:shadow-[inset_8px_8px_16px_#d1d9e6,inset_-8px_-8px_16px_#ffffff] transition-all duration-300 text-primary font-semibold rounded-2xl px-6 py-3 border-0">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Campaigns
             </Button>
           </Link>
+
+          {user && user.email === campaign.listedByEmail && (
+            <Link href={`/campaign/${id}/edit`}>
+              <Button className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] hover:shadow-[inset_8px_8px_16px_#d1d9e6,inset_-8px_-8px_16px_#ffffff] transition-all duration-300 font-semibold rounded-2xl px-6 py-3 border-0">
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit Campaign
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div className="max-w-4xl mx-auto">
@@ -98,6 +110,9 @@ export default function CampaignDetailsPage() {
               <h1 className="text-3xl md:text-4xl font-bold text-primary tracking-tight">
                 {campaign.name}
               </h1>
+              <p className="text-muted-foreground text-lg">
+                {campaign.description}
+              </p>
             </div>
 
             <div className="space-y-8">
@@ -111,7 +126,15 @@ export default function CampaignDetailsPage() {
                         Event Date
                       </p>
                       <p className="text-sm font-medium text-gray-700">
-                        {new Date(campaign.eventDate).toLocaleString()}
+                      {new Date(campaign.eventDate).toLocaleString(undefined, {
+                        year: "numeric",
+                        month: "numeric",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: true,
+                      })}
                       </p>
                     </div>
                   </div>
