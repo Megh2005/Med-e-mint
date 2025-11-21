@@ -96,7 +96,7 @@ export default function CampaignDetailsPage() {
 
           {user && user.email === campaign.listedByEmail && (
             <Link href={`/campaign/${id}/edit`}>
-              <Button className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] hover:shadow-[inset_8px_8px_16px_#d1d9e6,inset_-8px_-8px_16px_#ffffff] transition-all duration-300 font-semibold rounded-2xl px-6 py-3 border-0">
+              <Button className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] transition-all duration-300 font-semibold rounded-2xl px-6 py-3 border-0">
                 <Pencil className="w-4 h-4 mr-2" />
                 Edit Campaign
               </Button>
