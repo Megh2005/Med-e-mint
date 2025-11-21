@@ -1,13 +1,22 @@
 export interface Campaign {
-  createdAt: string;
-  eventDate: string;
-  id: string;
-  listedBy: string;
-  listedByEmail: string;
-  location: string;
-  locationDesc: string;
-  eventVenue: string;
-  name: string;
-  requirements: string[];
-  description: string;
-}
+    id: string;
+    name: string;
+    description: string;
+    eventDate: string;
+    eventVenue: string;
+    listedBy: string;
+    listedByEmail: string;
+    requirements: string[];
+    location: string;
+  }
+  
+  export interface Registration {
+    id: string;
+    campaignId: string;
+    userId: string;
+    name: string;
+    email: string;
+    role: "doctor" | "patient" | "ngo";
+    mobile: string;
+    registeredAt: string;
+  }

@@ -67,7 +67,7 @@ export default function Footer() {
   return (
     <footer className="bg-secondary/50 border-t text-foreground">
       <div className="container mx-auto px-4 md:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* About Section */}
           <div className="flex flex-col gap-4">
             <Logo />
@@ -77,52 +77,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Site Map */}
-          <div>
-            <h3 className="font-headline text-lg font-bold mb-4">Site Map</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link
-                  href="/doctor-finder"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Find a Doctor
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/prescription-scanner"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Scan Prescription
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/diet-coach"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  AI Diet Coach
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/contact"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Contact
-                </Link>
-              </li>
-            </ul>
-          </div>
+
 
           {/* Contact Info */}
           <div>

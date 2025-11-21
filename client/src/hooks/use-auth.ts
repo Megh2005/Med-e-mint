@@ -8,6 +8,7 @@ export interface UserProfile {
   email: string;
   role: "doctor" | "patient" | "ngo";
   name?: string;
+  mobile?: string;
 }
 
 export interface AuthUser extends FirebaseAuthUser, UserProfile {}

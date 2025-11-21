@@ -27,6 +27,7 @@ import { ArrowLeft, LoaderCircle, Plus, X } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // --- Custom Geolocation Hook ---
@@ -109,7 +110,7 @@ export default function ListCampaigns() {
     eventTime: "",
     location: "",
     description: "",
-    requirements: [""],
+    requirements: [],
     eventVenue: "",
   });
   const router = useRouter();
@@ -140,25 +141,11 @@ export default function ListCampaigns() {
     }));
   };
 
-  const handleRequirementChange = (value: string, index: number) => {
-    const newRequirements = [...eventData.requirements];
-    newRequirements[index] = value;
-    setEventData({ ...eventData, requirements: newRequirements });
-  };
-
-  const addRequirement = () => {
-    setEventData({
-      ...eventData,
-      requirements: [...eventData.requirements, ""],
-    });
-  };
-
-  const removeRequirement = (index: number) => {
-    if (eventData.requirements.length <= 1) return;
-    const newRequirements = eventData.requirements.filter(
-      (_, i) => i !== index
-    );
-    setEventData({ ...eventData, requirements: newRequirements });
+  const handleRequirementsChange = (values: string[]) => {
+    setEventData((prevData) => ({
+      ...prevData,
+      requirements: values,
+    }));
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -261,7 +248,6 @@ export default function ListCampaigns() {
   }
 
   const requirementsOptions = [
-    "",
     "doctor",
     "volunteers",
     "equipments",
@@ -354,6 +340,7 @@ export default function ListCampaigns() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
+                  required
                   name="description"
                   placeholder="Tell us more about the campaign"
                   value={eventData.description}
@@ -361,47 +348,17 @@ export default function ListCampaigns() {
                 />
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>Requirements</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addRequirement}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {eventData.requirements.map((req, idx) => (
-                    <div key={idx} className="flex items-center space-x-2">
-                      <select
-                        value={req}
-                        onChange={(e) =>
-                          handleRequirementChange(e.target.value, idx)
-                        }
-                        className="flex-1 bg-background border border-input rounded-md p-2 text-sm"
-                      >
-                        {requirementsOptions.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt === "" ? "Select requirement" : opt}
-                          </option>
-                        ))}
-                      </select>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeRequirement(idx)}
-                        disabled={eventData.requirements.length === 1}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+              <div className="space-y-2">
+                <Label>Requirements</Label>
+                <MultiSelect
+                  options={requirementsOptions.map((opt) => ({
+                    label: opt,
+                    value: opt,
+                  }))}
+                  onValueChange={handleRequirementsChange}
+                  defaultValue={eventData.requirements}
+                  placeholder="Select requirements"
+                />
               </div>
             </div>
             <div className="space-y-6">
@@ -474,3 +431,4 @@ export default function ListCampaigns() {
     </div>
   );
 }
+
