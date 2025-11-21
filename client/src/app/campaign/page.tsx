@@ -199,12 +199,22 @@ export default function ListCampaigns() {
 
       if (res.data.success) {
         console.log("Campaign Listed successfully!");
-        router.push("/sos");
+        // send email to all about the new campaign
+        await axios.post("/api/notify-all", {
+          campaignName: eventData.name,
+          campaignId: res.data.campaignId,
+          eventDate: combinedDateTime,
+          location: eventData.location,
+          eventVenue: eventData.eventVenue,
+          listedBy: user?.displayName || "Anonymous",
+          senderEmail: user?.email || null,
+        });
       }
     } catch (error) {
       console.log("Error submitting form:", error);
     } finally {
       setSubmitting(false);
+      router.push("/sos");
     }
   };
 

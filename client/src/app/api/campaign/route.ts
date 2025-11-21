@@ -30,11 +30,12 @@ export async function POST(req: NextRequest) {
     };
 
     const campaignRef = collection(db, "campaigns");
-    await addDoc(campaignRef, campaignData);
+    const newCampaign = await addDoc(campaignRef, campaignData);
 
     return NextResponse.json({
       success: true,
       message: "Campaign created successfully",
+      campaignId: newCampaign.id,
     });
   } catch (error) {
     console.error("Error fetching patients:", error);
