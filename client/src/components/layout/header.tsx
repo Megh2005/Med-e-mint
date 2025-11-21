@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "@/components/logo";
@@ -80,20 +80,23 @@ export default function Header() {
     ? { href: "/profile", label: "Profile", icon: <UserIcon /> }
     : { href: "/auth", label: "Sign In", icon: <LogIn /> };
 
-  let allNavLinks = [...mainNavLinks];
-  if (user && user.role === "doctor") {
-    allNavLinks.push({
-      href: "/write-prescription",
-      label: "Write Prescription",
-      icon: <ClipboardPlus />,
-    });
-  } else if (user && user.role === "patient") {
-    allNavLinks.push({
-      href: "/show-prescriptions",
-      label: "Show Prescriptions",
-      icon: <ClipboardList />,
-    });
-  }
+  const allNavLinks = useMemo(() => {
+    const links = [...mainNavLinks];
+    if (user && user.role === "doctor") {
+      links.push({
+        href: "/write-prescription",
+        label: "Write Prescription",
+        icon: <ClipboardPlus />,
+      });
+    } else if (user && user.role === "patient") {
+      links.push({
+        href: "/show-prescriptions",
+        label: "Show Prescriptions",
+        icon: <ClipboardList />,
+      });
+    }
+    return links;
+  }, [user]);
 
   const navLinks = [...allNavLinks, authLink];
 

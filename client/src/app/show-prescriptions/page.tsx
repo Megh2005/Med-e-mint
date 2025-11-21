@@ -343,13 +343,13 @@ export default function ShowPrescriptionsPage() {
                         <Download size={16} />
                         Export as PNG
                       </Button>
-                      <Button
+                      {/* <Button
                         onClick={() => handleMintClick(prescription)}
                         className="flex items-center gap-2"
                       >
                         <Gem size={16} />
                         Mint
-                      </Button>
+                      </Button> */}
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useParams, useRouter } from "next/navigation";
+import { Campaign } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { useAuth } from "@/hooks/use-auth";
 import {
   addDoc,
   collection,
@@ -12,20 +15,41 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Registration } from "@/types";
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function CampaignRegistrationPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [mobile, setMobile] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+
+    async function fetchCampaign() {
+      try {
+        const docRef = doc(db, "campaigns", id as string);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          setCampaign({ id: docSnap.id, ...docSnap.data() } as Campaign);
+        } else {
+          console.log("No such document!");
+        }
+      } catch (error) {
+        console.error("Error fetching campaign:", error);
+      }
+    }
+
+    fetchCampaign();
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,6 +109,36 @@ export default function CampaignRegistrationPage() {
         title: "Success",
         description: "Successfully registered for the campaign!",
       });
+
+      // Send confirmation email
+      if (user.email && campaign) {
+        try {
+          await fetch("/api/email", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              recipients: [{ email: user.email }],
+              subject: `Registration Confirmation for ${campaign.name}`,
+              htmlContent: `<p>You have successfully registered for the campaign: <strong>${
+                campaign.name
+              }</strong>.</p>
+              <strong>Date: ${new Date(campaign.eventDate).toLocaleString()}</strong>
+              <br />
+              <strong>Venue: ${campaign.eventVenue}</strong>`,
+            }),
+          });
+        } catch (emailError) {
+          console.error("Failed to send confirmation email:", emailError);
+          toast({
+            title: "Email Error",
+            description: "Failed to send confirmation email.",
+            variant: "destructive",
+          });
+        }
+      }
+
       router.push(`/campaign/${id}`);
     } catch (error) {
       console.error("Error saving registration:", error);
