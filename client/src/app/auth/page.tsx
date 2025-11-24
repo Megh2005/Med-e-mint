@@ -5,10 +5,29 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Logo from "@/components/logo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -28,6 +47,7 @@ const onboardingSchema = z.object({
   address: z.string().min(1, "Address is required"),
   age: z.coerce.number().positive("Age must be a positive number"),
   role: z.string().min(1, "Please select a role"),
+  specialization: z.string().optional(),
   country: z.string().min(1, "Please select your country"),
   foodPreference: z.string().min(1, "Please select your food preference"),
   avatar: z.string().min(1, "Please select an avatar"),
@@ -50,6 +70,7 @@ export default function AuthPage() {
       address: "",
       age: undefined,
       role: "",
+      specialization: "",
       country: "",
       foodPreference: "",
       avatar: "",
@@ -127,13 +148,18 @@ export default function AuthPage() {
             {showOnboarding ? "Complete Your Profile" : "Welcome to Med-e-Care"}
           </CardTitle>
           <CardDescription>
-            {showOnboarding ? "Please fill in the details below to continue." : "Sign in with your Google account to continue"}
+            {showOnboarding
+              ? "Please fill in the details below to continue."
+              : "Sign in with your Google account to continue"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {showOnboarding ? (
             <Form {...onboardingForm}>
-              <form onSubmit={onboardingForm.handleSubmit(onOnboardingSubmit)} className="space-y-4 pt-4">
+              <form
+                onSubmit={onboardingForm.handleSubmit(onOnboardingSubmit)}
+                className="space-y-4 pt-4"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={onboardingForm.control}
@@ -142,7 +168,11 @@ export default function AuthPage() {
                       <FormItem>
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Your Name" {...field} className="bg-background shadow-neumorphic-inset" />
+                          <Input
+                            placeholder="Your Name"
+                            {...field}
+                            className="bg-background shadow-neumorphic-inset"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -154,7 +184,10 @@ export default function AuthPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Gender</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger className="bg-background shadow-neumorphic-inset">
                               <SelectValue placeholder="Select Gender" />
@@ -177,7 +210,12 @@ export default function AuthPage() {
                       <FormItem>
                         <FormLabel>Age</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g., 25" {...field} className="bg-background shadow-neumorphic-inset" />
+                          <Input
+                            type="number"
+                            placeholder="e.g., 25"
+                            {...field}
+                            className="bg-background shadow-neumorphic-inset"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -190,7 +228,11 @@ export default function AuthPage() {
                       <FormItem>
                         <FormLabel>Address</FormLabel>
                         <FormControl>
-                          <Input placeholder="Your full address" {...field} className="bg-background shadow-neumorphic-inset" />
+                          <Input
+                            placeholder="Your full address"
+                            {...field}
+                            className="bg-background shadow-neumorphic-inset"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -202,7 +244,10 @@ export default function AuthPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Country</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger className="bg-background shadow-neumorphic-inset">
                               <SelectValue placeholder="Select your country" />
@@ -210,7 +255,10 @@ export default function AuthPage() {
                           </FormControl>
                           <SelectContent>
                             {countries.map((country) => (
-                              <SelectItem key={country.code} value={country.name}>
+                              <SelectItem
+                                key={country.code}
+                                value={country.name}
+                              >
                                 {country.name}
                               </SelectItem>
                             ))}
@@ -226,7 +274,10 @@ export default function AuthPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Role</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <FormControl>
                             <SelectTrigger className="bg-background shadow-neumorphic-inset">
                               <SelectValue placeholder="Select your role" />
@@ -242,13 +293,35 @@ export default function AuthPage() {
                       </FormItem>
                     )}
                   />
+                  {onboardingForm.watch("role") === "doctor" && (
+                    <FormField
+                      control={onboardingForm.control}
+                      name="specialization"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Specialisation</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Cardiologist"
+                              {...field}
+                              className="bg-background shadow-neumorphic-inset"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   <FormField
                     control={onboardingForm.control}
                     name="foodPreference"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Food Preference</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger className="bg-background shadow-neumorphic-inset">
                               <SelectValue placeholder="Select preference" />
@@ -256,7 +329,9 @@ export default function AuthPage() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="veg">Vegetarian</SelectItem>
-                            <SelectItem value="non-veg">Non-Vegetarian</SelectItem>
+                            <SelectItem value="non-veg">
+                              Non-Vegetarian
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -291,10 +366,13 @@ export default function AuthPage() {
                                     field.onChange(data.secure_url);
                                     toast({
                                       title: "Avatar Uploaded",
-                                      description: "Your new avatar has been saved.",
+                                      description:
+                                        "Your new avatar has been saved.",
                                     });
                                   } else {
-                                    throw new Error(data.error || "Upload failed");
+                                    throw new Error(
+                                      data.error || "Upload failed"
+                                    );
                                   }
                                 } catch (error: any) {
                                   toast({
@@ -325,7 +403,11 @@ export default function AuthPage() {
                   )}
                 />
 
-                <Button type="submit" className="w-full shadow-neumorphic active:shadow-neumorphic-inset" disabled={loading}>
+                <Button
+                  type="submit"
+                  className="w-full shadow-neumorphic active:shadow-neumorphic-inset"
+                  disabled={loading}
+                >
                   {loading ? "Saving..." : "Complete Profile"}
                 </Button>
               </form>
@@ -341,7 +423,7 @@ export default function AuthPage() {
               </Button>
             </div>
           )}
-           <p className="mt-4 text-center text-xs text-muted-foreground">
+          <p className="mt-4 text-center text-xs text-muted-foreground">
             By continuing, you agree to our Terms of Service and Privacy Policy.
           </p>
         </CardContent>

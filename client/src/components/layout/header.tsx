@@ -93,19 +93,32 @@ export default function Header() {
       );
     }
 
-    if (user && user.role === "doctor") {
+    // Doctor: remove certain routes and add "Write Prescription"
+    if (user?.role === "doctor") {
+      links = links.filter(
+        (link) =>
+          link.href !== "/doctor-finder" &&
+          link.href !== "/diet-coach" &&
+          link.href !== "/mint" &&
+          link.href !== "/mint/docs"
+      );
+
       links.push({
         href: "/write-prescription",
         label: "Write Prescription",
         icon: <ClipboardPlus />,
       });
-    } else if (user && user.role === "patient") {
+    }
+
+    // Patient gets "Show Prescriptions"
+    if (user?.role === "patient") {
       links.push({
         href: "/show-prescriptions",
         label: "Show Prescriptions",
         icon: <ClipboardList />,
       });
     }
+
     return links;
   }, [user]);
 
