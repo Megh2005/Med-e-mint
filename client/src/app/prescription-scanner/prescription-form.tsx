@@ -25,7 +25,7 @@ export default function PrescriptionForm() {
   const [preview, setPreview] = useState<string | null>(null);
   const { toast } = useToast();
   const [scanCount, setScanCount] = useState(0);
-  const scanLimit = 3;
+  const scanLimit = 10;
   const [medicineLinks, setMedicineLinks] = useState<Record<string, { loading: boolean; links: GetMedicineLinksOutput['links'] | null }>>({});
 
 
@@ -254,6 +254,11 @@ export default function PrescriptionForm() {
           )}
           {result && (
             <div className="space-y-4">
+              <div className="mt-4 text-center">
+                <p className="text-red-500 text-sm font-semibold">
+                  <span className="font-bold">Warning:</span> This is AI-generated info. Please cross-check with a physical doctor.
+                </p>
+              </div>
               <div className="flex items-start gap-4 p-4 rounded-lg bg-background shadow-neumorphic-inset">
                 <CircleUserRound className="size-8 text-primary shrink-0 mt-1" />
                 <div>

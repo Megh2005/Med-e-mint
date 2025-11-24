@@ -105,6 +105,34 @@ export default function PrescriptionForm() {
         description: `Prescription for ${selectedPatientData.name} has been saved.`,
       });
 
+      // Send email to patient
+      if (selectedPatientData.email) {
+        try {
+          await fetch('/api/email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              recipients: [{ email: selectedPatientData.email }],
+              subject: `New Prescription from ${user?.name || 'your doctor'}`,
+              htmlContent: `<p>Dear ${selectedPatientData.name},</p><p>You have received a new prescription from Dr. ${user?.name || 'your doctor'}.</p><p>Please log in to your Med-e-Mint account to view the details.</p><p>Best regards,<br/> Med-e-Mint Team</p>`,
+            }),
+          });
+          toast({
+            title: "Email Sent",
+            description: `An email notification has been sent to ${selectedPatientData.name}.`,
+          });
+        } catch (emailError) {
+          console.error("Failed to send email:", emailError);
+          toast({
+            title: "Email Error",
+            description: "Failed to send prescription notification email.",
+            variant: "destructive",
+          });
+        }
+      }
+
       // Reset form fields
       setSelectedPatient("");
       setDiseaseDetails("");

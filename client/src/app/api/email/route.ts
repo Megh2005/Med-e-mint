@@ -22,9 +22,9 @@ export async function POST(req: Request) {
 
         const sendSmtpEmail = {
             to: recipients,
-            sender: { email: process.env.NEXT_PUBLIC_SENDER_EMAIL, name: "Team Sansthapana" },
+            sender: { email: process.env.NEXT_PUBLIC_SENDER_EMAIL, name: "Team Med-e-Care" },
             subject: subject || "Registration Confirmation Email",
-            htmlContent: htmlContent || "<p>WELCOME TO SANSTHAPANA!</p>",
+            htmlContent: htmlContent || "<p>WELCOME TO MED-E-CARE!</p>",
         };
 
         await brevo.sendTransacEmail(sendSmtpEmail);
