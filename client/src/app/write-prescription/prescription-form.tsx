@@ -15,7 +15,9 @@ export default function PrescriptionForm() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [patients, setPatients] = useState<UserProfile[]>([]);
+  const [doctors, setDoctors] = useState<UserProfile[]>([]);
   const [selectedPatient, setSelectedPatient] = useState("");
+  const [referredDoctor, setReferredDoctor] = useState("");
   const [diseaseDetails, setDiseaseDetails] = useState("");
   const [labTests, setLabTests] = useState("");
   const [medications, setMedications] = useState("");
@@ -46,29 +48,43 @@ export default function PrescriptionForm() {
   }, []);
 
   useEffect(() => {
-    const fetchPatients = async () => {
+    const fetchUsers = async () => {
+      if (user?.role !== "doctor") return;
+
       try {
         const usersRef = collection(db, "users");
-        const q = query(usersRef, where("role", "==", "patient"));
-        const querySnapshot = await getDocs(q);
-        const patientsData = querySnapshot.docs.map((doc) => ({
+        
+        // Fetch patients
+        const patientQuery = query(usersRef, where("role", "==", "patient"));
+        const patientSnapshot = await getDocs(patientQuery);
+        const patientsData = patientSnapshot.docs.map((doc) => ({
           uid: doc.id,
           ...(doc.data() as Omit<UserProfile, "uid">),
         }));
         setPatients(patientsData);
+
+        // Fetch doctors
+        const doctorQuery = query(usersRef, where("role", "==", "doctor"));
+        const doctorSnapshot = await getDocs(doctorQuery);
+        const doctorsData = doctorSnapshot.docs
+          .map((doc) => ({
+            uid: doc.id,
+            ...(doc.data() as Omit<UserProfile, "uid">),
+          }))
+          .filter(doctor => doctor.uid !== user.uid); // Exclude current doctor
+        setDoctors(doctorsData);
+
       } catch (error) {
         console.error(error);
         toast({
           title: "Error",
-          description: "Could not load patient list.",
+          description: "Could not load patient/doctor lists.",
           variant: "destructive",
         });
       }
     };
 
-    if (user?.role === "doctor") {
-      fetchPatients();
-    }
+    fetchUsers();
   }, [user, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,7 +104,7 @@ export default function PrescriptionForm() {
     setIsLoading(true);
 
     try {
-      await addDoc(prescriptionsCollection, {
+      const prescriptionData: any = {
         doctorId: user?.uid,
         patientId: selectedPatientData.uid,
         doctorName: user?.name || user?.email,
@@ -98,7 +114,13 @@ export default function PrescriptionForm() {
         medications,
         additionalNotes,
         dateTime: currentDateTime,
-      });
+      };
+
+      if (referredDoctor) {
+        prescriptionData.referredDoctorId = referredDoctor;
+      }
+
+      await addDoc(prescriptionsCollection, prescriptionData);
 
       toast({
         title: "Prescription Saved",
@@ -107,34 +129,62 @@ export default function PrescriptionForm() {
 
       // Send email to patient
       if (selectedPatientData.email) {
-        try {
-          await fetch('/api/email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              recipients: [{ email: selectedPatientData.email }],
-              subject: `New Prescription from ${user?.name || 'your doctor'}`,
-              htmlContent: `<p>Dear ${selectedPatientData.name},</p><p>You have received a new prescription from Dr. ${user?.name || 'your doctor'}.</p><p>Please log in to your Med-e-Mint account to view the details.</p><p>Best regards,<br/> Med-e-Mint Team</p>`,
-            }),
-          });
-          toast({
-            title: "Email Sent",
-            description: `An email notification has been sent to ${selectedPatientData.name}.`,
-          });
-        } catch (emailError) {
-          console.error("Failed to send email:", emailError);
-          toast({
-            title: "Email Error",
-            description: "Failed to send prescription notification email.",
-            variant: "destructive",
-          });
+        fetch('/api/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipients: [{ email: selectedPatientData.email }],
+            subject: `New Prescription from ${user?.name || 'your doctor'}`,
+            htmlContent: `<p>Dear ${selectedPatientData.name},</p><p>You have received a new prescription from Dr. ${user?.name || 'your doctor'}.</p><p>Please log in to your Med-e-Mint account to view the details.</p><p>Best regards,<br/> Med-e-Mint Team</p>`,
+          }),
+        }).catch(emailError => console.error("Failed to send patient email:", emailError));
+      }
+
+      // Send email to referred doctor
+      if (referredDoctor) {
+        const referredDoctorData = doctors.find(d => d.uid === referredDoctor);
+        if (referredDoctorData?.email) {
+          try {
+            await fetch('/api/email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                recipients: [{ email: referredDoctorData.email }],
+                subject: `Patient Referral from Dr. ${user?.name}`,
+                htmlContent: `
+                  <p>Dear Dr. ${referredDoctorData.name},</p>
+                  <p>You have received a patient referral from Dr. ${user?.name}.</p>
+                  <h3>Patient Details:</h3>
+                  <p><strong>Name:</strong> ${selectedPatientData.name}</p>
+                  <h3>Prescription Details:</h3>
+                  <p><strong>Diagnosis:</strong> ${diseaseDetails}</p>
+                  <p><strong>Lab Tests:</strong> ${labTests || 'N/A'}</p>
+                  <p><strong>Medications:</strong></p>
+                  <div>${medications}</div>
+                  <p><strong>Additional Notes:</strong> ${additionalNotes || 'N/A'}</p>
+                  <p>Please review the case at your earliest convenience.</p>
+                  <p>Best regards,<br/> Med-e-Mint Team</p>
+                `,
+              }),
+            });
+            toast({
+              title: "Referral Email Sent",
+              description: `An email has been sent to Dr. ${referredDoctorData.name}.`,
+            });
+          } catch (emailError) {
+            console.error("Failed to send referral email:", emailError);
+            toast({
+              title: "Referral Email Error",
+              description: "Failed to send referral notification email.",
+              variant: "destructive",
+            });
+          }
         }
       }
 
       // Reset form fields
       setSelectedPatient("");
+      setReferredDoctor("");
       setDiseaseDetails("");
       setLabTests("");
       setMedications("");
@@ -193,6 +243,32 @@ export default function PrescriptionForm() {
               {patients.map((patient) => (
                 <option key={patient.uid} value={patient.uid}>
                   {patient.name} ({patient.email})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Refer to Doctor (Optional) */}
+          <div>
+            <label
+              htmlFor="doctor-refer-select"
+              className="block text-sm font-medium text-muted-foreground mb-2"
+            >
+              Refer to Doctor{" "}
+              <span className="text-xs text-muted-foreground/70">
+                (Optional)
+              </span>
+            </label>
+            <select
+              id="doctor-refer-select"
+              value={referredDoctor}
+              onChange={(e) => setReferredDoctor(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md bg-white text-black"
+            >
+              <option value="">Select a doctor to refer...</option>
+              {doctors.map((doctor) => (
+                <option key={doctor.uid} value={doctor.uid}>
+                  {doctor.name} ({doctor.specialization || 'General'})
                 </option>
               ))}
             </select>
