@@ -61,7 +61,7 @@ export default function ContactUsPage() {
         <p>${values.message}</p>
         <br/>
         <p>Best regards,</p>
-        <p>The Med-E-Mint Team</p>
+        <p>The Med-E-Care Team</p>
     `;
 
     const adminEmailSubject = `New Contact Form Submission (Ticket: ${ticketId})`;

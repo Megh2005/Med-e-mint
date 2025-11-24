@@ -3,7 +3,7 @@
 import { useState, useTransition, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, Loader2, Pill, ScanLine, Info, Package, CircleUserRound, AlertTriangle, Atom, HelpCircle } from "lucide-react";
+import { UploadCloud, Loader2, Pill, ScanLine, Info, Package, CircleUserRound, AlertTriangle, Atom, HelpCircle, ShoppingBag } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,8 +13,9 @@ import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { handleScanPrescription } from "@/lib/actions";
+import { handleScanPrescription, handleGetMedicineLinks } from "@/lib/actions";
 import { ScanPrescriptionOutput } from "@/ai/flows/scan-prescription-and-extract-details";
+import { GetMedicineLinksOutput } from "@/ai/flows/get-medicine-links";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PrescriptionForm() {
@@ -25,6 +26,8 @@ export default function PrescriptionForm() {
   const { toast } = useToast();
   const [scanCount, setScanCount] = useState(0);
   const scanLimit = 3;
+  const [medicineLinks, setMedicineLinks] = useState<Record<string, { loading: boolean; links: GetMedicineLinksOutput['links'] | null }>>({});
+
 
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -120,6 +123,26 @@ export default function PrescriptionForm() {
     setFile(null);
     setPreview(null);
     setResult(null);
+  };
+
+  const getLinks = async (medicineName: string) => {
+    if (medicineLinks[medicineName]?.links) return; 
+
+    setMedicineLinks(prev => ({ ...prev, [medicineName]: { loading: true, links: null } }));
+
+    startTransition(async () => {
+      const response = await handleGetMedicineLinks(medicineName);
+      if (response.success && response.data) {
+        setMedicineLinks(prev => ({ ...prev, [medicineName]: { loading: false, links: response.data.links } }));
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Failed to get links",
+          description: response.error,
+        });
+        setMedicineLinks(prev => ({ ...prev, [medicineName]: { loading: false, links: null } }));
+      }
+    });
   };
 
   if (authLoading || !user) {
@@ -267,6 +290,37 @@ export default function PrescriptionForm() {
                             <div>
                                 <p className="text-sm text-muted-foreground">Purpose</p>
                                 <p className="text-sm">{med.purpose}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <ShoppingBag className="size-5 text-primary shrink-0 mt-1" />
+                            <div>
+                                <p className="text-sm text-muted-foreground">Buy Online</p>
+                                <div className="mt-2">
+                                    {medicineLinks[med.name]?.loading ? (
+                                        <div className="flex justify-center items-center h-10 w-full rounded-md bg-background shadow-neumorphic-inset">
+                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                        </div>
+                                    ) : medicineLinks[med.name]?.links ? (
+                                        <div className="flex gap-2 flex-wrap">
+                                            {medicineLinks[med.name]!.links!.map((link, i) => (
+                                                <Button asChild size="sm" key={i} className="shadow-neumorphic active:shadow-neumorphic-inset">
+                                                    <a href={link.link} target="_blank" rel="noopener noreferrer">
+                                                        {link.pharmacyName}
+                                                    </a>
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            size="sm"
+                                            className="shadow-neumorphic active:shadow-neumorphic-inset w-full"
+                                            onClick={() => getLinks(med.name)}
+                                        >
+                                            Find Buying Links
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <div className="flex items-start gap-4">

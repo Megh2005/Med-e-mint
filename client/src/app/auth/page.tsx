@@ -98,7 +98,7 @@ export default function AuthPage() {
 
       toast({
         title: "Onboarding Complete",
-        description: "Welcome to Med-e-Mint!",
+        description: "Welcome to Med-e-Care!",
       });
       router.push("/");
     } catch (error: any) {
@@ -124,7 +124,7 @@ export default function AuthPage() {
             <Logo />
           </Link>
           <CardTitle className="font-headline text-2xl">
-            {showOnboarding ? "Complete Your Profile" : "Welcome to Med-e-Mint"}
+            {showOnboarding ? "Complete Your Profile" : "Welcome to Med-e-Care"}
           </CardTitle>
           <CardDescription>
             {showOnboarding ? "Please fill in the details below to continue." : "Sign in with your Google account to continue"}

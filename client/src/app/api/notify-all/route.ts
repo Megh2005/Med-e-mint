@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
             </p>
             <hr/>
             <p>Best regards,</p>
-            <p>The Med-E-Mint Team</p>
+            <p>The Med-e-Care Team</p>
         `;
 
     const brevo = new SibApiV3Sdk.TransactionalEmailsApi();
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       bcc: usersToNotify.map((u) => ({ email: u.email })),
       sender: {
         email: process.env.NEXT_PUBLIC_SENDER_EMAIL,
-        name: "Team Sansthapana",
+        name: "Team Med-e-Care",
       },
       subject: newCampaignEmailSubject,
       htmlContent: newCampaignEmailHtmlContent,

@@ -88,7 +88,7 @@ export const connectWallet = async (
         } else {
             toast({
                 title: "Wallet Connected",
-                description: "Welcome to Med-e-Mint!",
+                description: "Welcome to Med-e-Care!",
             });
         }
     } catch (error) {

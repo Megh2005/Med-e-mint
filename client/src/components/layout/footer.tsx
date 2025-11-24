@@ -144,7 +144,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Med-e-Mint. All rights reserved.
+            © {new Date().getFullYear()} Med-e-Care. All rights reserved.
           </p>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" asChild>

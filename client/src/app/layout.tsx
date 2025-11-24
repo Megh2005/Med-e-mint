@@ -14,7 +14,7 @@ const ptSerif = PT_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Med-e-Mint",
+  title: "Med-e-Care",
   description: "Your Health, Reimagined.",
 };
 

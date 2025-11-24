@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { doc, setDoc, getDoc, updateDoc, increment } from "firebase/firestore";
 import { getPersonalizedDietPlan, PersonalizedDietPlanInput } from "@/ai/flows/get-personalized-diet-plan";
 import { scanPrescriptionAndExtractDetails } from "@/ai/flows/scan-prescription-and-extract-details";
+import { getMedicineLinks } from "@/ai/flows/get-medicine-links";
 import { db } from "./firebase";
 
 export async function handleScanPrescription(dataUri: string, userId: string) {
@@ -13,7 +14,7 @@ export async function handleScanPrescription(dataUri: string, userId: string) {
   }
 
   const userDocRef = doc(db, "users", userId);
-  const scanLimit = 3;
+  const scanLimit = 10;
 
   try {
     const userDoc = await getDoc(userDocRef);
@@ -56,7 +57,7 @@ export async function handleGetDietPlan(input: PersonalizedDietPlanInput, userId
 
         const userDocRef = doc(db, "users", userId);
         const userDoc = await getDoc(userDocRef);
-        const dietPlanLimit = 3;
+        const dietPlanLimit = 10;
 
         let dietPlanCount = 0;
         if (userDoc.exists()) {
@@ -104,5 +105,15 @@ export async function getUserDietInfo(userId: string) {
     } catch (error) {
         console.error(error);
         return { success: false, error: "Failed to get user diet info." };
+    }
+}
+
+export async function handleGetMedicineLinks(medicineName: string) {
+    try {
+        const result = await getMedicineLinks({ medicineName });
+        return { success: true, data: result };
+    } catch (error) {
+        console.error(error);
+        return { success: false, error: "Failed to get medicine links." };
     }
 }

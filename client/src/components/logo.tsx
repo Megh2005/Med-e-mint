@@ -26,7 +26,7 @@ export default function Logo({ className, iconOnly = false }: { className?: stri
         <PlusIcon className="w-8 h-8 text-primary" />
         {!iconOnly && (
           <span className="text-xl font-bold font-headline text-foreground tracking-tight">
-              Med-e-Mint
+              Med-e-Care
           </span>
         )}
     </div>

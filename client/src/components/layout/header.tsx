@@ -81,7 +81,18 @@ export default function Header() {
     : { href: "/auth", label: "Sign In", icon: <LogIn /> };
 
   const allNavLinks = useMemo(() => {
-    const links = [...mainNavLinks];
+    let links = [...mainNavLinks];
+
+    if (user && user.role === "ngo") {
+      links = links.filter(
+        (link) =>
+          // link.href !== "/prescription-scanner" &&
+          link.href !== "/mint" &&
+          link.href !== "/mint/docs" &&
+          link.href !== "/diet-coach"
+      );
+    }
+
     if (user && user.role === "doctor") {
       links.push({
         href: "/write-prescription",
