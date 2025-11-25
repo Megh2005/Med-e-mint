@@ -48,7 +48,7 @@ const mainNavLinks = [
   { href: "/sos", label: "Campaigns", icon: <HelpingHand /> },
   { href: "/mint", label: "Mint Docs", icon: <Gem /> },
   { href: "/mint/docs", label: "Minted Docs", icon: <Pickaxe /> },
-  { href: "/contact", label: "Contact Us", icon: <Contact /> },
+  // { href: "/contact", label: "Contact Us", icon: <Contact /> },
 ];
 
 export default function Header() {

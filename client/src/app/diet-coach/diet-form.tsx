@@ -71,7 +71,7 @@ export default function DietForm() {
   const dietPlanRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const [searchCount, setSearchCount] = useState(0);
-  const SEARCH_LIMIT = 3;
+  const SEARCH_LIMIT = 10;
 
   const form = useForm<DietFormValues>({
     resolver: zodResolver(dietFormSchema),
