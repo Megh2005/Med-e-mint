@@ -67,14 +67,10 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="space-y-6 text-center">
             <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold font-headline tracking-tight text-foreground">
-              The Ultimate Med-Tech ERP at Your Fingertips With<br />
+              The Ultimate Med-Tech ERP at Your Fingertips With
+              <br />
               <span className="text-primary">Med-e-Care</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-6xl mx-auto">
-              Med-e-Care presents the ERP for the healthcare industry, with
-              features like NGO campaigns, prescription management, and
-              patient records.
-            </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 asChild
