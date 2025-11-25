@@ -121,7 +121,7 @@ export default function AuthPage() {
         title: "Onboarding Complete",
         description: "Welcome to Med-e-Care!",
       });
-      router.push("/");
+      window.location.reload();
     } catch (error: any) {
       toast({
         title: "Onboarding Failed",
