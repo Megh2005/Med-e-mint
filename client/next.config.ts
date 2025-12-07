@@ -1,4 +1,4 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -6,9 +6,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   devIndicators: false,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  serverExternalPackages: ['express', 'genkit', '@genkit-ai/googleai', '@google/generative-ai'],
   images: {
     unoptimized: true,
     remotePatterns: [
